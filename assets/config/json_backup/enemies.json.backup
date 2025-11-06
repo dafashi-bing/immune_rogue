@@ -1,0 +1,87 @@
+{
+  "chaser": {
+    "health": 30.0,
+    "speed": 60.0,
+    "contact_damage": 5.0,
+    "coins": 10
+  },
+  "shooter": {
+    "health": 25.0,
+    "speed": 30.0,
+    "contact_damage": 10.0,
+    "attack_range": 300.0,
+    "projectile_speed": 200.0,
+    "projectile_damage": 15.0,
+    "shoot_cooldown": 2.0,
+    "coins": 20
+  },
+  "shielded_chaser": {
+    "health": 45.0,
+    "speed": 50.0,
+    "contact_damage": 10.0,
+    "shield_health": 20.0,
+    "shield_regeneration_delay": 5.0,
+    "coins": 30
+  },
+  "swarmer": {
+    "health": 15.0,
+    "speed": 120.0,
+    "contact_damage": 10.0,
+    "spawn_count": 9,
+    "swarm_radius": 80.0,
+    "separation_radius": 30.0,
+    "coins": 1
+  },
+  "bomber": {
+    "health": 50.0,
+    "speed": 40.0,
+    "contact_damage": 7.5,
+    "explosion_radius": 100.0,
+    "explosion_damage": 30.0,
+    "fuse_time": 3.0,
+    "explosion_projectiles": 6,
+    "explosion_projectile_speed": 150.0,
+    "explosion_projectile_damage": 8.0,
+    "coins": 5
+  },
+  "sniper": {
+    "health": 25.0,
+    "speed": 30.0,
+    "contact_damage": 7.5,
+    "attack_range": 400.0,
+    "charge_time": 2.0,
+    "aim_time": 1.0,
+    "shot_cooldown": 4.0,
+    "damage_percent": 0.5,
+    "projectile_speed": 600.0,
+    "coins": 5
+  },
+  "splitter": {
+    "health": 40.0,
+    "speed": 60.0,
+    "contact_damage": 10.0,
+    "split_count": 6,
+    "max_generations": 2,
+    "generation_health": [40.0, 25.0, 15.0],
+    "generation_speed_multiplier": [1.0, 0.8, 0.6],
+    "generation_radius": [18.0, 14.0, 10.0],
+    "split_distance": 30.0,
+    "coins": 5
+  },
+  "mine_layer": {
+    "health": 35.0,
+    "speed": 45.0,
+    "contact_damage": 7.5,
+    "mine_lay_interval": 3.0,
+    "min_distance_from_mines": 80.0,
+    "mine_arm_time": 1.0,
+    "mine_explosion_radius": 60.0,
+    "mine_damage_percent": 0.5,
+    "defensive_distance_min": 150.0,
+    "defensive_distance_max": 250.0,
+    "random_movement_chance": 0.3,
+    "random_movement_interval": 2.0,
+    "random_movement_distance": 100.0,
+    "coins": 5
+  }
+}

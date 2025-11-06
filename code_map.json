@@ -1,0 +1,458 @@
+{
+  "project": "Shape Rogue",
+  "description": "Fast-paced geometric arena brawler built with Flutter and Flame engine",
+  "main_entry": "lib/main.dart",
+  "file_tree": {
+    "lib/": {
+      "main.dart": "App entry point, GameWidget setup with display configuration",
+      "game/": {
+        "circle_rouge_game.dart": "Main game class, game loop, state management with game modes"
+      },
+      "components/": {
+        "hero.dart": "Player character component with abilities",
+        "hud.dart": "UI overlay for health, energy, wave info, ability cooldowns",
+        "shop_panel.dart": "Between-wave upgrade shop with dynamic pricing",
+        "stats_overlay.dart": "Coin counter and status display during gameplay",
+        "sound_manager.dart": "Audio management singleton with BGM and SFX",
+        "enemies/": {
+          "enemy_chaser.dart": "Red aggressive enemies with stun/slow effects",
+          "enemy_shooter.dart": "Purple ranged enemies with optimal distance AI",
+          "shielded_chaser.dart": "Brown armored enemies with shield mechanics",
+          "projectile.dart": "Base projectile class with slow effects",
+          "shape_projectile.dart": "Hero projectile implementation",
+          "piercing_projectile.dart": "Piercing projectile for Triangle",
+          "triangle_projectile.dart": "Massive Triangle ability projectile"
+        },
+        "abilities/": {
+          "hex_field.dart": "Hexagon's tactical area denial ability with damage and slow"
+        },
+        "items/": {
+          "item_pickup.dart": "Base class for collectible items with lifetime system",
+          "health_shard.dart": "Health restoration item dropped by enemies",
+          "weapon_overclock.dart": "Temporary fire rate boost item",
+          "retry_token.dart": "Special currency for 1HP Challenge mode"
+        },
+        "shapes/": {
+          "custom_shapes.dart": "Geometric shape rendering utilities"
+        }
+      },
+      "overlays/": {
+        "start_menu_overlay.dart": "Main menu UI with animations",
+        "game_mode_selection_overlay.dart": "Game mode selection screen",
+        "hero_selection_overlay.dart": "Character selection screen with hero stats",
+        "game_over_overlay.dart": "Victory/defeat screens with retry options",
+        "pause_menu_overlay.dart": "In-game pause menu with animations"
+      },
+      "config/": {
+        "display_config.dart": "Display and scaling configuration management",
+        "game_mode_config.dart": "Game mode definitions and settings",
+        "hero_config.dart": "Hero data and ability definitions",
+        "wave_config.dart": "Wave progression, enemy settings, and shop pricing",
+        "item_config.dart": "Shop item definitions and effects"
+      }
+    },
+    "assets/": {
+      "config/": {
+        "display.json": "Display settings and window size presets",
+        "game_modes.json": "Game mode configurations (Normal, Endless, 1HP Challenge)",
+        "heroes.json": "Hero stats and ability configurations",
+        "waves.json": "Wave settings, enemy spawn patterns, and shop config",
+        "items.json": "Shop item definitions with prices and effects"
+      },
+      "images/": {
+        "background1.png": "Arena background",
+        "logo.png": "Game logo",
+        "logo-512.png": "High-res game logo",
+        "ability_mastery.png": "Ability mastery item icon",
+        "ability_mastery_transparent.png": "Transparent ability mastery icon",
+        "attack_speed.png": "Attack speed item icon",
+        "attack_speed_transparent.png": "Transparent attack speed icon",
+        "extended_reach.png": "Extended reach item icon",
+        "extended_reach_transparent.png": "Transparent extended reach icon",
+        "health_potion.png": "Health potion item icon",
+        "health_potion_transparent.png": "Transparent health potion icon",
+        "max_health_up.png": "Max health upgrade icon",
+        "max_health_up_transparent.png": "Transparent max health icon",
+        "speed_boost.png": "Speed boost item icon",
+        "speed_boost_transparent.png": "Transparent speed boost icon"
+      },
+      "audio/": {
+        "bgm/": {
+          "geometric_pulse.mp3": "Main battle background music",
+          "digital_clash.mp3": "Alternative battle music",
+          "digital_clash_2.mp3": "Second alternative battle music"
+        },
+        "clear.mp3": "Wave completion sound",
+        "fail.mp3": "Game over sound",
+        "victory.mp3": "Game completion sound",
+        "purchase.mp3": "Shop purchase sound",
+        "dash_trim.mp3": "Circle ability sound",
+        "spike_shot_trim.mp3": "Triangle ability sound",
+        "shield_bash_trim.mp3": "Square ability sound",
+        "star_flare_trim.mp3": "Pentagon ability sound",
+        "hex_field.mp3": "Hexagon ability sound",
+        "heptagon_resonance.mp3": "Heptagon ability sound",
+        "retry_token_collect.mp3": "Retry token collection sound",
+        "chaser_shield_break.mp3": "Shield break sound effect"
+      }
+    },
+    "design_docs/": {
+      "game_introduction_v2.md": "Updated complete game overview and design philosophy",
+      "Delta-GDD – Enhanced Experience Update.md": "Major version 2.0 design document",
+      "Delta-GDD-Technical-Implementation-Plan.md": "Technical implementation roadmap",
+      "circle_rouge_pitch.md": "Original game pitch and concept",
+      "heroes.md": "Hero design specifications",
+      "hud_and_shop_node_wireframe.md": "UI design specifications",
+      "prototype_1_hero_movement_and_shape_ability.md": "Movement prototype notes",
+      "prototype_2_enemt_behaviors.md": "Enemy behavior prototype notes",
+      "play_test_plan_one_full_run.md": "Testing methodology",
+      "sound_generation.md": "Audio design specifications",
+      "Todo.md": "Development tasks"
+    },
+    "patch_notes/": {
+      "v2.0.0-delta-gdd-enhanced-experience-update.md": "Major version 2.0 update",
+      "v2.0.1.md": "Version 2.0.1 patch notes",
+      "v1.5.0.md": "Enhanced abilities and balance changes",
+      "v1.4.0.md": "Previous version updates",
+      "v1.3.0.md": "Multi-hero system implementation"
+    }
+  },
+  "key_apis": {
+    "game_core": {
+      "CircleRougeGame": {
+        "file": "lib/game/circle_rouge_game.dart",
+        "extends": "FlameGame",
+        "mixins": ["HasKeyboardHandlerComponents", "HasCollisionDetection"],
+        "key_methods": [
+          "onLoad(): Future<void> - Initialize game, load configs, and setup display",
+          "startGame(): void - Show game mode selection",
+          "setGameMode(String modeId): void - Set current game mode",
+          "proceedToHeroSelection(): void - Navigate to hero selection",
+          "startGameWithHero(String heroId): void - Begin gameplay with selected hero",
+          "restartGame(): void - Reset and restart current session",
+          "showStartMenu(): void - Return to main menu",
+          "pauseGame(): void - Pause gameplay",
+          "resumeGame(): void - Resume gameplay",
+          "startWave(int wave): void - Initialize wave with enemy spawning",
+          "onWaveComplete(): void - Handle wave completion and shop",
+          "onGameOver(): void - Handle player defeat with retry token logic",
+          "spawnEnemy(): void - Create enemy based on wave configuration",
+          "onEnemyDestroyed(Component enemy): void - Handle enemy death and coin rewards",
+          "addProjectile(Component projectile): void - Track projectile",
+          "onProjectileDestroyed(Component projectile): void - Clean up projectile",
+          "getNoStayZoneForce(Vector2 position): Vector2 - Calculate edge repulsion force"
+        ],
+        "key_properties": [
+          "GameState gameState - Current game state enum",
+          "GameMode currentGameMode - Current game mode (Normal/Endless/1HP Challenge)",
+          "GameModeData? currentGameModeData - Current game mode configuration",
+          "Hero hero - Player character instance",
+          "int currentWave - Current wave number",
+          "int maxWaves - Maximum waves for current mode",
+          "int retryTokens - Available retry tokens for 1HP Challenge",
+          "List<Component> currentEnemies - Active enemy list",
+          "List<Component> currentProjectiles - Active projectile list",
+          "double waveTimer - Current wave elapsed time",
+          "double waveDuration - Wave duration from config",
+          "String selectedHeroId - Selected character type",
+          "double arenaWidth/arenaHeight - Game area dimensions from DisplayConfig",
+          "double scaleFactor - Responsive scaling multiplier"
+        ]
+      }
+    },
+    "hero_system": {
+      "Hero": {
+        "file": "lib/components/hero.dart",
+        "extends": "PositionComponent",
+        "mixins": ["HasGameRef<CircleRougeGame>", "KeyboardHandler"],
+        "key_methods": [
+          "onLoad(): Future<void> - Initialize hero with configuration",
+          "update(double dt): void - Handle movement, shooting, abilities, item effects",
+          "render(Canvas canvas): void - Draw hero shape with effects",
+          "onKeyEvent(KeyEvent event): bool - Process keyboard input",
+          "useAbility(): void - Trigger hero-specific ability",
+          "takeDamage(double damage): void - Handle incoming damage with retry token logic",
+          "heal(double amount): void - Restore health",
+          "addCoins(int amount): void - Increment coin count",
+          "shoot(): void - Fire projectile at nearest enemy",
+          "findNearestEnemy(): Component? - Target acquisition",
+          "activateInvincibility(): void - Post-wave protection",
+          "applyItemEffect(ItemData item): void - Apply shop item effects"
+        ],
+        "key_properties": [
+          "HeroData heroData - Hero configuration from JSON",
+          "double health/maxHealth - Current and maximum HP",
+          "double energy/maxEnergy - Ability resource",
+          "int coins - Currency for shop purchases",
+          "double attackSpeedMultiplier - Attack rate modifier from items",
+          "double speedMultiplier - Movement speed modifier from items",
+          "double abilityCooldownMultiplier - Ability cooldown modifier from items",
+          "double extendedReachMultiplier - Projectile range modifier",
+          "bool isInvincible - Temporary damage immunity",
+          "double lastAbilityTime - Cooldown tracking",
+          "double collisionRadius - Hero collision detection radius"
+        ]
+      }
+    },
+    "enemy_system": {
+      "EnemyChaser": {
+        "file": "lib/components/enemies/enemy_chaser.dart",
+        "extends": "CircleComponent",
+        "behavior": "Direct pursuit AI with collision damage, stun/slow resistance",
+        "key_methods": [
+          "update(double dt): void - Chase player with pathfinding and edge avoidance",
+          "takeDamage(double damage): void - Handle damage, death, and item drops",
+          "stun(double duration): void - Apply stun effect",
+          "applySlowEffect(double multiplier): void - Apply movement slow"
+        ],
+        "properties": [
+          "double health/maxHealth - Enemy health system",
+          "bool isStunned/isSlowed - Status effect flags",
+          "double speedMultiplier - Movement speed modifier"
+        ]
+      },
+      "EnemyShooter": {
+        "file": "lib/components/enemies/enemy_shooter.dart",
+        "extends": "CircleComponent",
+        "behavior": "Ranged combat AI with optimal distance maintenance",
+        "key_methods": [
+          "update(double dt): void - Position management and shooting logic",
+          "shootAtPlayer(): void - Fire projectile with timing",
+          "takeDamage(double damage): void - Handle damage, death, and item drops",
+          "stun(double duration): void - Apply stun effect",
+          "applySlowEffect(double multiplier): void - Apply movement slow"
+        ]
+      },
+      "ShieldedChaser": {
+        "file": "lib/components/enemies/shielded_chaser.dart",
+        "extends": "PositionComponent",
+        "behavior": "Armored enemy with separate shield health system",
+        "key_methods": [
+          "update(double dt): void - Movement with shield mechanics",
+          "takeDamage(double damage): void - Shield-first damage system with sound effects",
+          "render(Canvas canvas): void - Draw enemy with shield visuals"
+        ],
+        "properties": [
+          "double shieldHealth/maxShieldHealth - Shield system",
+          "bool hasShield - Shield status flag",
+          "double shieldRotation - Visual shield rotation"
+        ]
+      }
+    },
+    "item_system": {
+      "ItemPickup": {
+        "file": "lib/components/items/item_pickup.dart",
+        "extends": "PositionComponent",
+        "behavior": "Base class for collectible items with lifetime and collection mechanics",
+        "key_methods": [
+          "update(double dt): void - Handle lifetime, collection detection",
+          "collect(Hero hero): void - Apply item effect and cleanup",
+          "renderItem(Canvas canvas, Offset center): void - Abstract rendering method",
+          "applyEffect(Hero hero, CircleRougeGame game): void - Abstract effect method"
+        ],
+        "properties": [
+          "double lifetime/currentLifetime - Auto-despawn timer",
+          "bool isCollected - Collection status flag",
+          "double glowPulse - Visual glow animation"
+        ]
+      },
+      "HealthShard": {
+        "file": "lib/components/items/health_shard.dart",
+        "extends": "ItemPickup",
+        "behavior": "Health restoration item with heart-shaped visual",
+        "effect": "Restores 20 HP to player"
+      },
+      "WeaponOverclock": {
+        "file": "lib/components/items/weapon_overclock.dart",
+        "extends": "ItemPickup",
+        "behavior": "Temporary fire rate boost with lightning bolt visual",
+        "effect": "+25% fire rate for 10 seconds"
+      },
+      "RetryToken": {
+        "file": "lib/components/items/retry_token.dart",
+        "extends": "ItemPickup",
+        "behavior": "Special currency for 1HP Challenge mode with coin visual",
+        "effect": "Grants one retry attempt when player dies"
+      }
+    },
+    "ui_system": {
+      "HudComponent": {
+        "file": "lib/components/hud.dart",
+        "extends": "PositionComponent",
+        "key_methods": [
+          "updateHealth(double health): void - Sync health display",
+          "updateEnergy(double energy): void - Sync energy display",
+          "updateWave(int wave): void - Update wave indicator",
+          "updateWaveTimer(double timeLeft): void - Update wave countdown",
+          "updateAbilityCooldown(double cooldown): void - Show ability cooldown progress"
+        ]
+      },
+      "ShopPanel": {
+        "file": "lib/components/shop_panel.dart",
+        "extends": "PositionComponent",
+        "key_methods": [
+          "show(): void - Display shop interface with dynamic pricing",
+          "hide(): void - Close shop interface",
+          "purchaseItem(String itemId): void - Handle item purchase with price scaling",
+          "updateCoins(int coins): void - Refresh coin display",
+          "rollNewItems(): void - Reroll shop inventory for cost"
+        ],
+        "features": [
+          "Dynamic pricing based on wave progression",
+          "Item reroll system with coin cost",
+          "Visual item icons with transparency effects"
+        ]
+      },
+      "StatsOverlay": {
+        "file": "lib/components/stats_overlay.dart",
+        "extends": "PositionComponent",
+        "purpose": "Real-time display of coins, retry tokens, and player stats during gameplay"
+      },
+      "GameModeSelectionOverlay": {
+        "file": "lib/overlays/game_mode_selection_overlay.dart",
+        "extends": "StatelessWidget",
+        "purpose": "Game mode selection with Normal, Endless, and 1HP Challenge modes"
+      }
+    },
+    "audio_system": {
+      "SoundManager": {
+        "file": "lib/components/sound_manager.dart",
+        "pattern": "Singleton",
+        "key_methods": [
+          "preloadSounds(): Future<void> - Load all audio assets including BGM variants",
+          "playHeroAbilitySound(String heroShape): Future<void> - Ability SFX",
+          "playBattleBGM(): Future<void> - Start background music with random selection",
+          "stopBGM(): Future<void> - Stop background music",
+          "playClearSound(): Future<void> - Wave completion SFX",
+          "playFailSound(): Future<void> - Game over SFX",
+          "playVictorySound(): Future<void> - Victory SFX",
+          "playPurchaseSound(): Future<void> - Shop purchase SFX",
+          "playRetryTokenCollectSound(): Future<void> - Retry token collection SFX",
+          "playChaserShieldBreakSound(): Future<void> - Shield break SFX"
+        ],
+        "properties": [
+          "double volume - Sound effects volume (0.0-1.0)",
+          "double musicVolume - Background music volume (0.0-1.0)",
+          "List<String> bgmTracks - Available background music tracks"
+        ]
+      }
+    },
+    "configuration_system": {
+      "DisplayConfig": {
+        "file": "lib/config/display_config.dart",
+        "pattern": "Singleton",
+        "purpose": "Display settings, window sizing, and responsive scaling",
+        "key_methods": [
+          "loadConfig(): Future<void> - Load display.json configuration",
+          "get scaleFactor: double - Calculate responsive scaling factor",
+          "get arenaWidth/arenaHeight: double - Game area dimensions"
+        ],
+        "properties": [
+          "double windowWidth/windowHeight - App window dimensions",
+          "double arenaWidth/arenaHeight - Game area dimensions",
+          "double safeAreaMargin - Edge safety margin",
+          "bool maintainAspectRatio - Aspect ratio preservation flag"
+        ]
+      },
+      "GameModeConfig": {
+        "file": "lib/config/game_mode_config.dart",
+        "pattern": "Singleton",
+        "purpose": "Game mode definitions and settings management",
+        "key_methods": [
+          "loadConfig(): Future<void> - Load game_modes.json",
+          "getGameModeById(String id): GameModeData? - Retrieve mode by ID",
+          "getAllGameModes(): List<GameModeData> - Get all available modes"
+        ],
+        "game_modes": [
+          "Normal: Classic 5-wave survival",
+          "Endless: Infinite waves with scaling",
+          "1HP Challenge: One-hit kills with retry tokens"
+        ]
+      },
+      "WaveConfig": {
+        "file": "lib/config/wave_config.dart",
+        "pattern": "Singleton",
+        "purpose": "Wave progression, enemy spawn rates, difficulty scaling, shop pricing",
+        "key_methods": [
+          "loadConfig(): Future<void> - Load waves.json",
+          "getEnemyReward(String enemyType): WaveReward? - Get coin rewards"
+        ],
+        "key_classes": [
+          "WaveSettings - Global wave configuration",
+          "ShopConfig - Dynamic pricing system",
+          "EnemyConfig - Enemy movement speeds and drop rates"
+        ]
+      },
+      "ItemConfig": {
+        "file": "lib/config/item_config.dart",
+        "pattern": "Singleton",
+        "purpose": "Shop item definitions, prices, effects",
+        "key_methods": [
+          "loadConfig(): Future<void> - Load items.json",
+          "getItemById(String id): ItemData? - Get item by ID",
+          "getItemsByType(String type): List<ItemData> - Filter by item type"
+        ]
+      }
+    }
+  },
+  "game_flow": {
+    "state_machine": {
+      "GameState.startMenu": "Main menu display with animations",
+      "GameState.gameModeSelection": "Game mode selection screen",
+      "GameState.heroSelection": "Character picker with stats",
+      "GameState.playing": "Active gameplay with waves",
+      "GameState.shopping": "Between-wave upgrade shop with dynamic pricing",
+      "GameState.gameOver": "Defeat screen with retry options and retry tokens",
+      "GameState.victory": "Success screen after completing all waves",
+      "GameState.paused": "Pause menu overlay"
+    },
+    "gameplay_loop": [
+      "1. Game Mode Selection - Choose from Normal, Endless, or 1HP Challenge",
+      "2. Hero Selection - Choose from 5 geometric heroes with unique abilities",
+      "3. Wave Start - Timed survival challenge with enemy spawning",
+      "4. Combat - Auto-shooting + manual abilities with item drops",
+      "5. Wave Clear - All enemies defeated or timer expires",
+      "6. Shop Phase - Spend coins on upgrades with dynamic pricing",
+      "7. Next Wave - Repeat until completion or death (with retry token system)"
+    ]
+  },
+  "core_features": {
+    "game_modes": {
+      "Normal": "Classic 5-wave survival with standard difficulty",
+      "Endless": "Infinite waves with exponential scaling every 5 waves",
+      "1HP Challenge": "One-hit kills with retry token drops for second chances"
+    },
+    "hero_abilities": {
+      "Circle": "Rolling Surge - Dash attack through enemies",
+      "Triangle": "Spike Shot - Screen-wide piercing projectile",
+      "Square": "Shield Bash - Global enemy stun with damage",
+      "Pentagon": "Star Flare - 5-projectile radial burst",
+      "Hexagon": "Hex Field - Area damage + slow field with continuous effects"
+    },
+    "enemy_types": {
+      "Chaser": "Red - Direct pursuit with contact damage, vulnerable to stuns",
+      "Shooter": "Purple - Ranged attacks with distance keeping, item drops",
+      "Shielded Chaser": "Brown - Armored with shield system, sound effects"
+    },
+    "item_system": {
+      "Collectible Items": ["Health Shard", "Weapon Overclock", "Retry Token"],
+      "Shop Items": {
+        "Instant": ["Health Potion", "Energy Restoration"],
+        "Permanent": ["Max Health Up", "Attack Speed Up", "Ability Mastery", "Extended Reach"],
+        "Temporary": ["Speed Boost"]
+      },
+      "Dynamic Pricing": "Prices scale with wave progression and random variance"
+    }
+  },
+  "technical_architecture": {
+    "engine": "Flutter + Flame 1.18.0",
+    "patterns": ["Component-Entity System", "Singleton Managers", "Observer Pattern"],
+    "rendering": "Custom Canvas-based geometric shapes with scaling support",
+    "input": "Keyboard handling with WASD movement + Space/E abilities",
+    "audio": "Flame Audio with preloaded assets and random BGM selection",
+    "configuration": "JSON-driven data with runtime loading and validation",
+    "scaling": "Responsive design with DisplayConfig-based scaling factor",
+    "item_drops": "Percentage-based enemy drops with configurable rates",
+    "game_modes": "Flexible mode system with JSON configuration support"
+  }
+} 

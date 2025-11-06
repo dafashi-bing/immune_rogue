@@ -1,0 +1,59 @@
+baseDropChance: 0.1
+
+itemDrops:
+  - effectType: speed_boost
+    effectValue: 0.5
+    duration: 8.0
+    weight: 3.0
+    category: consumable
+    description: 50% speed increase
+
+  - effectType: damage_boost
+    effectValue: 1.0
+    duration: 10.0
+    weight: 2.0
+    category: consumable
+    description: 100% damage increase
+
+  - effectType: health_regen
+    effectValue: 5.0
+    duration: 12.0
+    weight: 2.0
+    category: consumable
+    description: 5 HP per second regeneration
+
+  # ARMOR DROPS TEMPORARILY DISABLED
+  # - effectType: shield
+  #   effectValue: 0.25
+  #   duration: 15.0
+  #   weight: 1.5
+  #   category: consumable
+  #   description: 25% of max HP as shield
+
+  - effectType: invincibility
+    effectValue: 1.0
+    duration: 5.0
+    weight: 0.5
+    category: consumable
+    description: Full invincibility
+
+  - effectType: weapon_overclock
+    effectValue: 1.0
+    duration: 10.0
+    weight: 2.0
+    category: consumable
+    description: 100% fire rate increase
+
+  - effectType: health_shard
+    effectValue: 20.0
+    duration: 0.0
+    weight: 4.0
+    category: instant
+    description: Instant 20 HP heal
+
+  - effectType: retry_token
+    effectValue: 1.0
+    duration: 0.0
+    weight: 0.5
+    category: instant
+    description: Extra life token

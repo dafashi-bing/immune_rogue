@@ -1,0 +1,132 @@
+{
+  "wave_config": {
+    "max_waves": 5,
+    "wave_duration": 30.0
+  },
+  "enemy_scaling": {
+    "health_multiplier": 0.1,
+    "spawn_speed_multiplier": 0,
+      "description": "Enemy health and spawn speed scale with wave progression. health_multiplier determines how much health increases per wave (0.5 = 50% per wave). spawn_speed_multiplier determines how much faster enemies spawn per wave (0 = no spawn speed scaling)."
+  },
+  "shop_config": {
+    "price_scaling": {
+      "wave_multiplier": 0.5,
+      "random_variance": 0.1,
+      "roll_cost": 10,
+        "description": "Shop prices scale with wave progression. wave_multiplier determines how much prices increase per wave (0.5 = 50% per wave). random_variance adds ±10% random price variation. roll_cost is the base cost to reroll shop items."
+    }
+  },
+  "enemy_config": {
+    "chaser": {
+      "movement_speed": 60.0,
+      "retry_drop_chance": 0,
+      "description": "Fast melee enemy that charges at the player"
+    },
+    "shooter": {
+      "movement_speed": 30.0,
+      "retry_drop_chance": 0.05,
+      "description": "Ranged enemy that maintains distance while shooting"
+    },
+    "shielded_chaser": {
+      "movement_speed": 60.0,
+      "retry_drop_chance": 0,
+      "description": "Armored melee enemy with shield protection"
+    },
+    "swarmer": {
+      "movement_speed": 120.0,
+      "retry_drop_chance": 0,
+      "description": "Fast, agile enemy that swarms together"
+    },
+    "bomber": {
+      "movement_speed": 40.0,
+      "retry_drop_chance": 0,
+      "description": "Slow but explosive enemy that detonates when close"
+    },
+    "sniper": {
+      "movement_speed": 30.0,
+      "retry_drop_chance": 0.05,
+      "description": "Long-range enemy with charging laser attacks"
+    },
+    "splitter": {
+      "movement_speed": 60.0,
+      "retry_drop_chance": 0,
+      "description": "Enemy that splits into smaller versions when destroyed"
+    },
+    "mine_layer": {
+      "movement_speed": 45.0,
+      "retry_drop_chance": 0.05,
+      "description": "Tactical enemy that places explosive mines"
+    }
+  },
+  "waves": [
+    {
+      "wave": 1,
+      "name": "First Contact",
+      "description": "Basic enemies to get you started",
+      "enemy_types": ["chaser"],
+      "spawn_weights": {
+        "chaser": 1.0
+      },
+      "spawn_interval": 2.5,
+      "spawn_count": 2
+    },
+    {
+      "wave": 2,
+      "name": "Ranged Assault",
+      "description": "Enemies that shoot from a distance",
+      "enemy_types": ["shooter"],
+      "spawn_weights": {
+        "shooter": 1.0
+      },
+      "spawn_interval": 2.0,
+      "spawn_count": 2
+    },
+    {
+      "wave": 3,
+      "name": "Mixed Forces",
+      "description": "A combination of enemy types",
+      "enemy_types": ["chaser", "shooter"],
+      "spawn_weights": {
+        "chaser": 0.6,
+        "shooter": 0.4
+      },
+      "spawn_interval": 1.8,
+      "spawn_count": 3
+    },
+    {
+      "wave": 4,
+      "name": "Heavy Assault",
+      "description": "More aggressive mixed enemies",
+      "enemy_types": ["chaser", "shooter"],
+      "spawn_weights": {
+        "chaser": 0.5,
+        "shooter": 0.5
+      },
+      "spawn_interval": 1.5,
+      "spawn_count": 3
+    },
+    {
+      "wave": 5,
+      "name": "Final Stand",
+      "description": "The ultimate challenge",
+      "enemy_types": ["chaser", "shooter", "shielded_chaser"],
+      "spawn_weights": {
+        "chaser": 0.35,
+        "shooter": 0.55,
+        "shielded_chaser": 0.1
+      },
+      "spawn_interval": 1.2,
+      "spawn_count": 3
+    }
+  ],
+  "infinite_mode_spawns": {
+    "description": "Enemy types unlock at specific wave thresholds in infinite mode",
+    "spawn_thresholds": {
+      "swarmer": 6,
+      "bomber": 8,
+      "sniper": 10,
+      "splitter": 12,
+      "mine_layer": 14
+    }
+  }
+} 

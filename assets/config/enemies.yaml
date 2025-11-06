@@ -1,0 +1,108 @@
+chaser:
+  health: 30.0
+  speed: 60.0
+  contact_damage: 5.0
+  coins: 10
+  movement_speed: 60.0
+  item_drop_chance: 0
+  description: Fast melee enemy that charges at the player
+
+shooter:
+  health: 25.0
+  speed: 30.0
+  contact_damage: 10.0
+  attack_range: 300.0
+  projectile_speed: 200.0
+  projectile_damage: 15.0
+  shoot_cooldown: 2.0
+  coins: 20
+  movement_speed: 30.0
+  item_drop_chance: 0.1
+  description: Ranged enemy that maintains distance while shooting
+
+shielded_chaser:
+  health: 45.0
+  speed: 50.0
+  contact_damage: 10.0
+  shield_health: 20.0
+  shield_regeneration_delay: 5.0
+  coins: 30
+  movement_speed: 60.0
+  item_drop_chance: 0
+  description: Armored melee enemy with shield protection
+
+swarmer:
+  health: 25.0
+  speed: 120.0
+  contact_damage: 10.0
+  spawn_count: 9
+  swarm_radius: 80.0
+  separation_radius: 30.0
+  coins: 1
+  movement_speed: 120.0
+  item_drop_chance: 0
+  description: Fast, agile enemy that swarms together
+
+bomber:
+  health: 100.0
+  speed: 40.0
+  contact_damage: 7.5
+  explosion_radius: 100.0
+  explosion_damage: 30.0
+  fuse_time: 2.0
+  explosion_projectiles: 6
+  explosion_projectile_speed: 150.0
+  explosion_projectile_damage: 8.0
+  coins: 5
+  movement_speed: 40.0
+  item_drop_chance: 0
+  description: Slow but explosive enemy that detonates when close
+
+sniper:
+  health: 125.0
+  speed: 30.0
+  contact_damage: 7.5
+  attack_range: 400.0
+  charge_time: 2.0
+  aim_time: 0.5  # Reduced by 50% from 1.0
+  shot_cooldown: 4.0
+  damage_percent: 1.5
+  projectile_speed: 600.0
+  coins: 5
+  movement_speed: 30.0
+  item_drop_chance: 0.1
+  description: Long-range enemy with charging laser attacks
+
+splitter:
+  health: 140.0
+  speed: 60.0
+  contact_damage: 10.0
+  split_count: 6
+  max_generations: 2
+  generation_health: [40.0, 25.0, 15.0]
+  generation_speed_multiplier: [1.0, 0.8, 0.6]
+  generation_radius: [18.0, 14.0, 10.0]
+  split_distance: 30.0
+  coins: 5
+  movement_speed: 60.0
+  item_drop_chance: 0
+  description: Enemy that splits into smaller versions when destroyed
+
+mine_layer:
+  health: 150.0
+  speed: 45.0
+  contact_damage: 7.5
+  mine_lay_interval: 3.0
+  min_distance_from_mines: 80.0
+  mine_arm_time: 1.0
+  mine_explosion_radius: 100.0
+  mine_damage_percent: 0.5
+  defensive_distance_min: 150.0
+  defensive_distance_max: 250.0
+  random_movement_chance: 0.3
+  random_movement_interval: 2.0
+  random_movement_distance: 100.0
+  coins: 5
+  movement_speed: 45.0
+  item_drop_chance: 0.1
+  description: Tactical enemy that places explosive mines

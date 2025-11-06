@@ -1,0 +1,3 @@
+- When working on Flutter projects, you should never claim your code working before having me test it. You don't need to do `flutter run`, but you should always make sure the code can be built and compiled. After that, you should let me test it. 
+- You should NEVER rollback any code WITHOUT my permission. If you find your attempt of implementation doesn't work. Ask me before you revery any thing you've written.
+- When working on implementations, you should keep your explaination precise. I will ask you follow up questions if I need an explaination on your work.
