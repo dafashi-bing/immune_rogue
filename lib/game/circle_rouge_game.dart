@@ -84,6 +84,10 @@ class CircleRougeGame extends FlameGame
   // Wave completion flag to prevent multiple calls
   bool waveCompletionInProgress = false;
   
+  // Ultimate video system
+  String? ultimateVideoPath;
+  VoidCallback? onUltimateVideoComplete;
+  
   @override
   Future<void> onLoad() async {
     super.onLoad();
@@ -228,6 +232,9 @@ class CircleRougeGame extends FlameGame
     
     // Update HUD to reflect new hero's ability
     hud.updateAbilityName();
+    hud.updateUltimateName();
+    // Reload icons for the new hero
+    hud.reloadIcons(); // Note: async but we don't await - icons will load in background
     
     // Add stats overlay for coin and stats display during gameplay
     if (!statsOverlay.isMounted) {
@@ -321,6 +328,9 @@ class CircleRougeGame extends FlameGame
     }
     hud.updateHealth(hero.health);
     hud.updateAbilityName(); // Update ability name for current hero
+    hud.updateUltimateName();
+    // Reload icons for the new hero
+    hud.reloadIcons(); // Note: async but we don't await - icons will load in background
     
     // Add stats overlay for coin and stats display during gameplay
     if (!statsOverlay.isMounted) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../game/circle_rouge_game.dart';
 import 'ui/responsive_layout.dart';
+import 'hero.dart' as hero_lib;
 
 class HudComponent extends Component with HasGameRef<CircleRougeGame>, ResponsiveMixin {
   late RectangleComponent healthBarBg;
@@ -19,6 +20,16 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
   late TextComponent abilityNameText; // Text inside the button
   late CircularProgressComponent cooldownProgress;
   late SkillButtonGlowComponent skillButtonGlow;
+  SpriteComponent? abilityIcon; // Icon for ability button
+  
+  // Ultimate ability button components
+  late CircleComponent ultimateButton;
+  late TextComponent ultimateHotkeyText;
+  late TextComponent ultimateNameText; // Text inside the button
+  late UltimateChargeFillComponent ultimateChargeFill;
+  late UltimateReadyGlowComponent ultimateReadyGlow; // Spinning glow when ready
+  late SkillButtonGlowComponent ultimateButtonGlow; // Pulsing glow when ready
+  SpriteComponent? ultimateIcon; // Icon for ultimate button
   
   // WASD button components
   late Map<String, RectangleComponent> wasdButtons;
@@ -33,6 +44,12 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
   double _hitEffectTimer = 0.0;
   double _readyEffectTimer = 0.0;
   bool _wasOnCooldown = false; // Track cooldown state changes
+  
+  // Ultimate ready effect state
+  bool _isShowingUltimateReadyEffect = false;
+  double _ultimateReadyEffectTimer = 0.0;
+  double _ultimateSpinTimer = 0.0; // Timer for spinning glow effect
+  int _previousUltimateCharge = 0; // Track previous charge to detect when it becomes ready
   
   static const double hitEffectDuration = 0.2; // 200ms hit effect
   static const double readyEffectDuration = 1.2; // 1200ms ready effect for multiple flashes
@@ -289,10 +306,102 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
     );
     add(skillButtonGlow);
     
+    // Load ability icon if available
+    _loadAbilityIcon(skillButtonX, skillButtonY, skillButtonRadius);
+    
+    // Ultimate ability button - positioned to the right of K button
+    final buttonSpacing = ResponsiveLayout.getScaledWidth(15.0, null); // Spacing between buttons
+    final ultimateButtonX = skillButtonX + (skillButtonRadius * 2) + buttonSpacing;
+    final ultimateButtonY = skillButtonY; // Same Y position as skill button
+    
+    ultimateButton = CircleComponent(
+      radius: skillButtonRadius,
+      paint: Paint()
+        ..color = Colors.transparent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = Colors.grey.withValues(alpha: 0.5),
+      position: Vector2(ultimateButtonX, ultimateButtonY),
+      anchor: Anchor.center,
+    );
+    add(ultimateButton);
+    
+    // Ultimate name text inside the button
+    ultimateNameText = TextComponent(
+      text: 'ULT', // Default, will be updated based on hero
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: const Color(0xFF4A9EFF),
+          fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, screenSize),
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+          shadows: const [
+            Shadow(
+              color: Colors.black,
+              blurRadius: 2,
+            ),
+          ],
+        ),
+      ),
+      anchor: Anchor.center,
+      position: Vector2(ultimateButtonX, ultimateButtonY),
+    );
+    add(ultimateNameText);
+    
+    // Hotkey text below the ultimate button
+    ultimateHotkeyText = TextComponent(
+      text: 'L',
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: ResponsiveLayout.getResponsiveFontSize(14.0, screenSize),
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.0,
+          shadows: const [
+            Shadow(
+              color: Colors.black,
+              blurRadius: 3,
+            ),
+          ],
+        ),
+      ),
+      anchor: Anchor.center,
+      position: Vector2(ultimateButtonX, ultimateButtonY + skillButtonRadius + ResponsiveLayout.getScaledHeight(15.0, null)),
+    );
+    add(ultimateHotkeyText);
+    
+    // Charge fill component for ultimate (shows progressive fill)
+    ultimateChargeFill = UltimateChargeFillComponent(
+      radius: skillButtonRadius,
+      position: Vector2(ultimateButtonX, ultimateButtonY),
+      anchor: Anchor.center,
+    );
+    add(ultimateChargeFill);
+    
+    // Spinning glow effect for ultimate when ready (similar to cooldown progress but continuous)
+    ultimateReadyGlow = UltimateReadyGlowComponent(
+      radius: skillButtonRadius,
+      position: Vector2(ultimateButtonX, ultimateButtonY),
+      anchor: Anchor.center,
+    );
+    add(ultimateReadyGlow);
+    
+    // Glow effect for ultimate ready state (similar to skill button glow)
+    ultimateButtonGlow = SkillButtonGlowComponent(
+      radius: skillButtonRadius,
+      position: Vector2(ultimateButtonX, ultimateButtonY),
+      anchor: Anchor.center,
+    );
+    add(ultimateButtonGlow);
+    
+    // Load ultimate icon if available
+    _loadUltimateIcon(ultimateButtonX, ultimateButtonY, skillButtonRadius);
+    
     // Old ability cooldown components removed - now using circular button
     
     // Update ability name based on hero
     updateAbilityName();
+    updateUltimateName();
     
     // Create WASD button layout on the left side
     _createWASDButtons();
@@ -403,17 +512,16 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
     _wasOnCooldown = isOnCooldown;
     
     if (cooldownPercent >= 1.0) {
-      // Ability ready - bright colored border with effects (faster, multiple flashes)
-      final strokeWidth = _isShowingReadyEffect ? 5.0 : 3.0;
+      // Ability ready - filled circle with hero color, bright colored border with effects
       // Faster flashing: 24 Hz instead of 8 Hz, and multiple cycles
       final readyPulse = _isShowingReadyEffect ? (1.0 + 0.4 * sin(_readyEffectTimer * 24.0)) : 1.0;
       final readyOpacity = readyPulse.clamp(0.5, 1.0);
       
+      // Fill button with hero color
       skillButton.paint = Paint()
-        ..color = Colors.transparent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..color = heroColor.withValues(alpha: readyOpacity);
+        ..color = heroColor.withValues(alpha: readyOpacity)
+        ..style = PaintingStyle.fill
+        ..strokeWidth = 0;
       
       // Show hotkey text in bright color
       skillHotkeyText.textRenderer = TextPaint(
@@ -438,37 +546,46 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
       // Hide progress bar when ready
       cooldownProgress.updateProgress(1.0);
       
-      // Update ability name text to match button color with flash effect
-      final nameOpacity = _isShowingReadyEffect ? readyOpacity : 1.0;
-      abilityNameText.textRenderer = TextPaint(
-        style: TextStyle(
-          color: heroColor.withValues(alpha: nameOpacity),
-          fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-          shadows: [
-            const Shadow(
-              color: Colors.black,
-              blurRadius: 2,
-            ),
-            if (_isShowingReadyEffect) Shadow(
-              color: heroColor,
-              blurRadius: 4,
-            ),
-          ],
-        ),
-      );
+      // Update icon opacity to match button opacity
+      if (abilityIcon != null && abilityIcon!.isMounted) {
+        abilityIcon!.opacity = readyOpacity;
+      }
+      
+      // Hide ability name text when icon is present
+      if (abilityIcon == null || !abilityIcon!.isMounted) {
+        // Only show text if no icon
+        final nameOpacity = _isShowingReadyEffect ? readyOpacity : 1.0;
+        abilityNameText.textRenderer = TextPaint(
+          style: TextStyle(
+            color: heroColor.withValues(alpha: nameOpacity),
+            fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            shadows: [
+              const Shadow(
+                color: Colors.black,
+                blurRadius: 2,
+              ),
+              if (_isShowingReadyEffect) Shadow(
+                color: heroColor,
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        );
+      } else {
+        abilityNameText.text = '';
+      }
     } else {
-      // On cooldown - gray border with progress effect and hit effect
+      // On cooldown - gray fill with border, progress effect and hit effect
       final hitFlash = _isShowingHitEffect ? (1.0 - _hitEffectTimer / hitEffectDuration) * 0.8 : 0.0;
-      final strokeWidth = _isShowingHitEffect ? 5.0 : 3.0;
       final opacity = (0.5 + hitFlash).clamp(0.0, 1.0);
       
+      // Fill button with gray at reduced opacity
       skillButton.paint = Paint()
-        ..color = Colors.transparent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..color = Colors.grey.withValues(alpha: opacity);
+        ..color = Colors.grey.withValues(alpha: opacity * 0.5)
+        ..style = PaintingStyle.fill
+        ..strokeWidth = 0;
       
       // Show hotkey text in gray
       skillHotkeyText.textRenderer = TextPaint(
@@ -489,21 +606,31 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
       // Update circular progress bar
       cooldownProgress.updateProgress(cooldownPercent);
       
-      // Update ability name text for cooldown state
-      abilityNameText.textRenderer = TextPaint(
-        style: TextStyle(
-          color: Colors.grey.withValues(alpha: 0.6),
-          fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-          shadows: const [
-            Shadow(
-              color: Colors.black,
-              blurRadius: 2,
-            ),
-          ],
-        ),
-      );
+      // Update icon opacity to match button opacity
+      if (abilityIcon != null && abilityIcon!.isMounted) {
+        abilityIcon!.opacity = opacity * 0.5; // Match button opacity
+      }
+      
+      // Hide ability name text when icon is present
+      if (abilityIcon == null || !abilityIcon!.isMounted) {
+        // Only show text if no icon
+        abilityNameText.textRenderer = TextPaint(
+          style: TextStyle(
+            color: Colors.grey.withValues(alpha: 0.6),
+            fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            shadows: const [
+              Shadow(
+                color: Colors.black,
+                blurRadius: 2,
+              ),
+            ],
+          ),
+        );
+      } else {
+        abilityNameText.text = '';
+      }
     }
   }
   
@@ -542,6 +669,124 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
     }
     
     abilityNameText.text = displayName;
+  }
+  
+  void updateUltimateName() {
+    // Update ultimate name based on hero's ultimate
+    final ultimate = gameRef.hero.heroData.ultimate;
+    String displayName = 'ULT'; // Default fallback
+    
+    if (ultimate != null && ultimate.name.isNotEmpty) {
+      // Use the ultimate name from config
+      displayName = ultimate.name.toUpperCase();
+    }
+    
+    ultimateNameText.text = displayName;
+  }
+  
+  // Load ability icon with color replacement (black to white)
+  Future<void> _loadAbilityIcon(double x, double y, double radius) async {
+    try {
+      final iconPath = gameRef.hero.heroData.ability.iconPath;
+      if (iconPath == null || iconPath.isEmpty) {
+        print('[HUD] No icon path for ability');
+        return;
+      }
+      
+      print('[HUD] Loading ability icon from: $iconPath');
+      
+      // Remove existing icon if present
+      if (abilityIcon != null && abilityIcon!.isMounted) {
+        abilityIcon!.removeFromParent();
+      }
+      
+      final sprite = await Sprite.load(iconPath);
+      final iconSize = radius * 1.6; // Icon size - make it visible
+      
+      abilityIcon = ColorReplacementSpriteComponent(
+        sprite: sprite,
+        size: Vector2(iconSize, iconSize),
+        position: Vector2(x, y),
+        anchor: Anchor.center,
+        sourceColor: Colors.black,
+        targetColor: Colors.white,
+      );
+      // Add icon after button so it's on top
+      add(abilityIcon!);
+      
+      // Hide ability name text when icon is present
+      abilityNameText.text = '';
+      print('[HUD] Ability icon loaded successfully');
+    } catch (e) {
+      print('[HUD] Could not load ability icon, error: $e');
+      abilityIcon = null;
+    }
+  }
+  
+  // Load ultimate icon with color replacement (black to white)
+  Future<void> _loadUltimateIcon(double x, double y, double radius) async {
+    try {
+      final ultimate = gameRef.hero.heroData.ultimate;
+      final iconPath = ultimate?.iconPath;
+      if (iconPath == null || iconPath.isEmpty) {
+        print('[HUD] No icon path for ultimate');
+        return;
+      }
+      
+      print('[HUD] Loading ultimate icon from: $iconPath');
+      
+      // Remove existing icon if present
+      if (ultimateIcon != null && ultimateIcon!.isMounted) {
+        ultimateIcon!.removeFromParent();
+      }
+      
+      final sprite = await Sprite.load(iconPath);
+      final iconSize = radius * 1.6; // Icon size - make it visible
+      
+      ultimateIcon = ColorReplacementSpriteComponent(
+        sprite: sprite,
+        size: Vector2(iconSize, iconSize),
+        position: Vector2(x, y),
+        anchor: Anchor.center,
+        sourceColor: Colors.black,
+        targetColor: Colors.white,
+      );
+      // Add icon after button so it's on top
+      add(ultimateIcon!);
+      
+      // Hide ultimate name text when icon is present
+      ultimateNameText.text = '';
+      print('[HUD] Ultimate icon loaded successfully');
+    } catch (e) {
+      print('[HUD] Could not load ultimate icon, error: $e');
+      ultimateIcon = null;
+    }
+  }
+  
+  // Public method to reload icons (called after hero is available)
+  Future<void> reloadIcons() async {
+    try {
+      // Wait a frame to ensure hero is fully initialized
+      await Future.delayed(Duration.zero);
+      
+      final skillButtonRadius = ResponsiveLayout.getScaledWidth(25.0, null);
+      final marginX = ResponsiveLayout.getScaledWidth(130.0, null);
+      final marginY = ResponsiveLayout.getScaledHeight(60.0, null);
+      final skillButtonX = screenSize.x - skillButtonRadius - marginX;
+      final skillButtonY = screenSize.y - skillButtonRadius - marginY;
+      
+      final buttonSpacing = ResponsiveLayout.getScaledWidth(15.0, null);
+      final ultimateButtonX = skillButtonX + (skillButtonRadius * 2) + buttonSpacing;
+      final ultimateButtonY = skillButtonY;
+      
+      print('[HUD] Loading ability icon...');
+      await _loadAbilityIcon(skillButtonX, skillButtonY, skillButtonRadius);
+      print('[HUD] Loading ultimate icon...');
+      await _loadUltimateIcon(ultimateButtonX, ultimateButtonY, skillButtonRadius);
+      print('[HUD] Icons loaded. abilityIcon: ${abilityIcon != null}, ultimateIcon: ${ultimateIcon != null}');
+    } catch (e) {
+      print('[HUD] Error in reloadIcons: $e');
+    }
   }
   
   void _createWASDButtons() {
@@ -663,9 +908,155 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
     }
   }
   
+  void updateUltimateCharge(int charge, int maxCharge) {
+    final chargePercent = charge / maxCharge;
+    final heroColor = gameRef.hero.heroData.color;
+    final isFullyCharged = charge >= maxCharge;
+    
+    // Detect when ultimate becomes ready
+    if (_previousUltimateCharge < maxCharge && charge >= maxCharge) {
+      // Ultimate just became ready - trigger ready effect
+      _isShowingUltimateReadyEffect = true;
+      _ultimateReadyEffectTimer = 0.0;
+      ultimateButtonGlow.showGlow(heroColor);
+    }
+    _previousUltimateCharge = charge;
+    
+    // Update button opacity and appearance
+    if (isFullyCharged) {
+      // Fully charged - filled circle with hero color, blinking effect
+      // Faster flashing: 24 Hz instead of 8 Hz, and multiple cycles
+      final readyPulse = _isShowingUltimateReadyEffect ? (1.0 + 0.4 * sin(_ultimateReadyEffectTimer * 24.0)) : 1.0;
+      final readyOpacity = readyPulse.clamp(0.5, 1.0);
+      
+      ultimateButton.opacity = 1.0;
+      ultimateButton.paint = Paint()
+        ..color = heroColor.withValues(alpha: readyOpacity)
+        ..style = PaintingStyle.fill
+        ..strokeWidth = 0; // No stroke, just fill
+      
+      // Hide charge fill (button itself is filled)
+      ultimateChargeFill.updateProgress(1.0, heroColor, true);
+      
+      // Show spinning glow effect
+      ultimateReadyGlow.isVisible = true;
+      ultimateReadyGlow.updateSpin(_ultimateSpinTimer, heroColor);
+      
+      // Update hotkey text color with blinking effect
+      ultimateHotkeyText.textRenderer = TextPaint(
+        style: TextStyle(
+          color: heroColor,
+          fontSize: ResponsiveLayout.getResponsiveFontSize(14.0, gameRef.size),
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.0,
+          shadows: [
+            const Shadow(
+              color: Colors.black,
+              blurRadius: 3,
+            ),
+            Shadow(
+              color: heroColor,
+              blurRadius: 6,
+            ),
+          ],
+        ),
+      );
+      
+      // Update icon opacity to match button opacity
+      if (ultimateIcon != null && ultimateIcon!.isMounted) {
+        ultimateIcon!.opacity = readyOpacity;
+      }
+      
+      // Hide ultimate name text when icon is present
+      if (ultimateIcon == null || !ultimateIcon!.isMounted) {
+        // Only show text if no icon
+        final nameOpacity = _isShowingUltimateReadyEffect ? readyOpacity : 1.0;
+        ultimateNameText.textRenderer = TextPaint(
+          style: TextStyle(
+            color: heroColor.withValues(alpha: nameOpacity),
+            fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            shadows: [
+              const Shadow(
+                color: Colors.black,
+                blurRadius: 2,
+              ),
+              if (_isShowingUltimateReadyEffect) Shadow(
+                color: heroColor,
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        );
+      } else {
+        ultimateNameText.text = '';
+      }
+    } else {
+      // Not fully charged - 50% opacity, gray fill, and progressive fill with hero color
+      ultimateButton.opacity = 0.5;
+      ultimateButton.paint = Paint()
+        ..color = Colors.grey.withValues(alpha: 0.5)
+        ..style = PaintingStyle.fill
+        ..strokeWidth = 0;
+      
+      // Hide spinning glow when not ready
+      ultimateReadyGlow.isVisible = false;
+      ultimateButtonGlow.hideGlow();
+      
+      // Show progressive fill with hero color (at 50% opacity to match button)
+      ultimateChargeFill.updateProgress(chargePercent, heroColor.withValues(alpha: 0.5), false);
+      
+      // Update hotkey text color
+      ultimateHotkeyText.textRenderer = TextPaint(
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.5),
+          fontSize: ResponsiveLayout.getResponsiveFontSize(14.0, gameRef.size),
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.0,
+          shadows: const [
+            Shadow(
+              color: Colors.black,
+              blurRadius: 3,
+            ),
+          ],
+        ),
+      );
+      
+      // Update icon opacity to match button opacity
+      if (ultimateIcon != null && ultimateIcon!.isMounted) {
+        ultimateIcon!.opacity = 0.5; // Match button opacity
+      }
+      
+      // Hide ultimate name text when icon is present
+      if (ultimateIcon == null || !ultimateIcon!.isMounted) {
+        // Only show text if no icon
+        ultimateNameText.textRenderer = TextPaint(
+          style: TextStyle(
+            color: Colors.grey.withValues(alpha: 0.6),
+            fontSize: ResponsiveLayout.getResponsiveFontSize(10.0, gameRef.size),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            shadows: const [
+              Shadow(
+                color: Colors.black,
+                blurRadius: 2,
+              ),
+            ],
+          ),
+        );
+      } else {
+        ultimateNameText.text = '';
+      }
+    }
+  }
+  
   @override
   void update(double dt) {
     super.update(dt);
+    
+    // Update ultimate charge display
+    updateUltimateCharge(gameRef.hero.ultimateCharge, hero_lib.Hero.maxUltimateCharge);
     
     // Update hit effect
     if (_isShowingHitEffect) {
@@ -686,8 +1077,22 @@ class HudComponent extends Component with HasGameRef<CircleRougeGame>, Responsiv
       }
     }
     
-    // Update glow animation
+    // Update ultimate ready effect
+    if (_isShowingUltimateReadyEffect) {
+      _ultimateReadyEffectTimer += dt;
+      if (_ultimateReadyEffectTimer >= readyEffectDuration) {
+        _isShowingUltimateReadyEffect = false;
+        _ultimateReadyEffectTimer = 0.0;
+        ultimateButtonGlow.hideGlow();
+      }
+    }
+    
+    // Update spinning glow timer (continuous)
+    _ultimateSpinTimer += dt;
+    
+    // Update glow animations
     skillButtonGlow.updateAnimation(dt);
+    ultimateButtonGlow.updateAnimation(dt);
   }
   
   @override
@@ -741,6 +1146,57 @@ class CircularProgressComponent extends PositionComponent {
   }
 }
 
+/// Custom component for ultimate charge fill (vertical fill from bottom to top)
+class UltimateChargeFillComponent extends PositionComponent {
+  final double radius;
+  double progress = 0.0; // 0.0 to 1.0
+  Color fillColor = Colors.grey;
+  bool isFullyCharged = false;
+  
+  UltimateChargeFillComponent({
+    required this.radius,
+    required Vector2 position,
+    required Anchor anchor,
+  }) : super(position: position, anchor: anchor);
+  
+  void updateProgress(double newProgress, Color color, bool fullyCharged) {
+    progress = newProgress.clamp(0.0, 1.0);
+    fillColor = color;
+    isFullyCharged = fullyCharged;
+  }
+  
+  @override
+  void render(Canvas canvas) {
+    if (progress <= 0.0 && !isFullyCharged) return;
+    
+    final paint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    
+    // Clip to circle bounds
+    final circlePath = Path()
+      ..addOval(Rect.fromCircle(center: Offset.zero, radius: radius));
+    canvas.clipPath(circlePath);
+    
+    // Calculate fill height from bottom to top
+    // In canvas coordinates: Y=0 is center, positive Y is down, negative Y is up
+    final diameter = radius * 2;
+    final fillHeight = diameter * progress;
+    final circleBottom = radius; // Bottom of circle (positive Y, down)
+    final fillTop = circleBottom - fillHeight; // Top of fill (grows upward toward center)
+    
+    // Draw rectangle from bottom to top
+    final fillRect = Rect.fromLTRB(
+      -radius,      // Left edge of circle
+      fillTop,      // Top of fill rectangle (grows upward from bottom)
+      radius,       // Right edge of circle
+      circleBottom, // Bottom of circle (always at bottom)
+    );
+    
+    canvas.drawRect(fillRect, paint);
+  }
+}
+
 /// Custom glow effect component for skill button ready state
 class SkillButtonGlowComponent extends PositionComponent {
   final double radius;
@@ -786,5 +1242,102 @@ class SkillButtonGlowComponent extends PositionComponent {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     
     canvas.drawCircle(Offset.zero, glowRadius, glowPaint);
+  }
+}
+
+/// Custom component for ultimate ready spinning glow effect
+class UltimateReadyGlowComponent extends PositionComponent {
+  final double radius;
+  bool isVisible = false;
+  double spinTime = 0.0;
+  Color glowColor = Colors.blue;
+  
+  UltimateReadyGlowComponent({
+    required this.radius,
+    required Vector2 position,
+    required Anchor anchor,
+  }) : super(position: position, anchor: anchor);
+  
+  void updateSpin(double time, Color color) {
+    spinTime = time;
+    glowColor = color;
+  }
+  
+  @override
+  void render(Canvas canvas) {
+    if (!isVisible) return;
+    
+    // Continuous spinning glow effect
+    // Rotate around the circle continuously - half speed
+    final spinSpeed = 1.0; // Rotations per second (half of original 2.0)
+    final angle = (spinTime * spinSpeed * 2 * pi) % (2 * pi);
+    const startAngle = -pi / 2; // Start at top
+    final currentStartAngle = startAngle + angle;
+    
+    final rect = Rect.fromCircle(center: Offset.zero, radius: radius);
+    const sweepAngle = pi / 2; // 90 degree arc
+    
+    // Draw multiple layers for intense glow effect
+    // Outer glow layer (most blurred, largest)
+    final outerGlowPaint = Paint()
+      ..color = glowColor.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawArc(rect, currentStartAngle, sweepAngle, false, outerGlowPaint);
+    
+    // Middle glow layer
+    final middleGlowPaint = Paint()
+      ..color = glowColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawArc(rect, currentStartAngle, sweepAngle, false, middleGlowPaint);
+    
+    // Inner bright layer (sharp, most visible)
+    final innerGlowPaint = Paint()
+      ..color = glowColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawArc(rect, currentStartAngle, sweepAngle, false, innerGlowPaint);
+  }
+}
+
+/// Custom sprite component that replaces one color with another
+class ColorReplacementSpriteComponent extends SpriteComponent {
+  final Color sourceColor;
+  final Color targetColor;
+  
+  ColorReplacementSpriteComponent({
+    required super.sprite,
+    required super.size,
+    required super.position,
+    required super.anchor,
+    required this.sourceColor,
+    required this.targetColor,
+  });
+  
+  @override
+  void render(Canvas canvas) {
+    // Use a color filter to replace black with white
+    // For black icons, we use a color filter that replaces the color while preserving alpha
+    canvas.save();
+    
+    // Use ColorFilter.mode with srcIn to replace color with white
+    // srcIn: uses source alpha, destination color
+    final paint = Paint()
+      ..colorFilter = ColorFilter.mode(targetColor, BlendMode.srcIn);
+    
+    canvas.saveLayer(
+      Rect.fromLTWH(0, 0, size.x, size.y),
+      paint,
+    );
+    super.render(canvas);
+    canvas.restore();
+    canvas.restore();
   }
 } 

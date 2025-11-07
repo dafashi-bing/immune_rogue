@@ -7,6 +7,7 @@ import 'overlays/game_mode_selection_overlay.dart';
 import 'overlays/hero_selection_overlay.dart';
 import 'overlays/pause_menu_overlay.dart';
 import 'overlays/game_over_overlay.dart';
+import 'overlays/ultimate_video_overlay.dart';
 
 void main() {
   runApp(const CircleRougeApp());
@@ -86,6 +87,11 @@ class CircleRougeApp extends StatelessWidget {
                           'PauseMenu': (context, game) => PauseMenuOverlay(game: game),
                           'GameOver': (context, game) => GameOverOverlay(game: game, isVictory: false),
                           'Victory': (context, game) => GameOverOverlay(game: game, isVictory: true),
+                          'UltimateVideo': (context, game) => UltimateVideoOverlay(
+                            game: game,
+                            videoPath: game.ultimateVideoPath ?? '',
+                            onComplete: game.onUltimateVideoComplete,
+                          ),
                         },
                       ),
                     ),

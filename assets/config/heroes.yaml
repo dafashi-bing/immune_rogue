@@ -11,6 +11,12 @@ heroes:
       type: dash_damage
       damage: 40
       range: 200
+      icon_path: heroes/circle/Engulf_Surge_ability_icon.png
+    ultimate:
+      name: Engulf Rampage
+      description: For 3 s, dash continuously at 400 units/sec, bouncing off battlefield edges. Any enemy you collide with is instantly devoured (instant kill).
+      video_path: assets/images/heroes/circle/Macrophage_Engulf_rampage.mp4
+      icon_path: heroes/circle/Engulf_Rampage_ability_icon.png
     color: 0xFF4CAF50
 
   - id: triangle

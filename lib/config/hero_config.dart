@@ -15,6 +15,7 @@ class HeroAbility {
   final double? slowPercent;
   final double? projectileSize;
   final double? knockbackDistance;
+  final String? iconPath;
   
   HeroAbility({
     required this.name,
@@ -29,6 +30,7 @@ class HeroAbility {
     this.slowPercent,
     this.projectileSize,
     this.knockbackDistance,
+    this.iconPath,
   });
   
   factory HeroAbility.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,36 @@ class HeroAbility {
       slowPercent: json['slow_percent']?.toDouble(),
       projectileSize: json['projectile_size']?.toDouble(),
       knockbackDistance: json['knockback_distance']?.toDouble(),
+      iconPath: json['icon_path'],
+    );
+  }
+}
+
+class HeroUltimate {
+  final String name;
+  final String description;
+  final String? videoPath;
+  final String? iconPath;
+  
+  HeroUltimate({
+    required this.name,
+    required this.description,
+    this.videoPath,
+    this.iconPath,
+  });
+  
+  factory HeroUltimate.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return HeroUltimate(
+        name: '',
+        description: '',
+      );
+    }
+    return HeroUltimate(
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      videoPath: json['video_path'],
+      iconPath: json['icon_path'],
     );
   }
 }
@@ -56,6 +88,7 @@ class HeroData {
   final double moveSpeed;
   final double health;
   final HeroAbility ability;
+  final HeroUltimate? ultimate;
   final Color color;
   
   HeroData({
@@ -65,6 +98,7 @@ class HeroData {
     required this.moveSpeed,
     required this.health,
     required this.ability,
+    this.ultimate,
     required this.color,
   });
   
@@ -76,8 +110,29 @@ class HeroData {
       moveSpeed: json['move_speed'].toDouble(),
       health: json['health'].toDouble(),
       ability: HeroAbility.fromJson(json['ability']),
+      ultimate: json['ultimate'] != null 
+          ? HeroUltimate.fromJson(HeroData._convertYamlMap(json['ultimate']))
+          : null,
       color: Color(_parseColor(json['color'])),
     );
+  }
+  
+  // Helper function to convert YAML maps to Map<String, dynamic>
+  static Map<String, dynamic> _convertYamlMap(Map yamlMap) {
+    return yamlMap.map((key, value) {
+      if (value is Map) {
+        return MapEntry(key.toString(), _convertYamlMap(value));
+      } else if (value is List) {
+        return MapEntry(key.toString(), value.map((item) {
+          if (item is Map) {
+            return _convertYamlMap(item);
+          }
+          return item;
+        }).toList());
+      } else {
+        return MapEntry(key.toString(), value);
+      }
+    });
   }
   
   static int _parseColor(dynamic colorValue) {
@@ -102,7 +157,7 @@ class HeroConfig {
   HeroConfig._();
   
   // Helper function to convert YAML maps to Map<String, dynamic>
-  Map<String, dynamic> _convertYamlMap(Map yamlMap) {
+  static Map<String, dynamic> _convertYamlMap(Map yamlMap) {
     return yamlMap.map((key, value) {
       if (value is Map) {
         return MapEntry(key.toString(), _convertYamlMap(value));
@@ -132,7 +187,7 @@ class HeroConfig {
       final yamlData = loadYaml(yamlString) as Map;
       
       _heroes = (yamlData['heroes'] as List)
-          .map((hero) => HeroData.fromJson(_convertYamlMap(hero as Map)))
+          .map((hero) => HeroData.fromJson(HeroConfig._convertYamlMap(hero)))
           .toList();
       
       _loaded = true;

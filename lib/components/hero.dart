@@ -19,6 +19,8 @@ import 'enemies/triangle_projectile.dart';
 import 'sound_manager.dart';
 import 'companions/drone_wingman.dart';
 import 'companions/hero_clone.dart';
+import 'ultimates/ultimate_ability.dart';
+import 'ultimates/engulf_rampage.dart';
 
 class TemporaryEffect {
   final String type;
@@ -113,6 +115,13 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
   int totalKills = 0;
   int autoInjectorBonusHP = 0; // Track bonus HP from auto-injector
   
+  // Ultimate ability system
+  static const int maxUltimateCharge = 10;
+  int ultimateCharge = 0;
+  bool isUsingUltimate = false;
+  UltimateAbility? _currentUltimate;
+  UltimateAbility? _pendingUltimate; // Ultimate waiting for video to complete
+  
   // Drone companion system
   final List<DroneWingman> _activeDrones = [];
   
@@ -125,6 +134,9 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
   
   // Input tracking
   final Set<LogicalKeyboardKey> _pressedKeys = <LogicalKeyboardKey>{};
+  
+  // Expose pressed keys for ultimate abilities
+  Set<LogicalKeyboardKey> get pressedKeys => _pressedKeys;
   
   // Display config listener for dynamic scaling
   DisplayConfigChangeCallback? _displayConfigListener;
@@ -509,7 +521,8 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
     // Weapon overclock now handled by temporary effect system
     
     // Update invincibility timer
-    if (isInvincible) {
+    // Skip timer check if using ultimate or pending ultimate (ultimate manages its own invulnerability)
+    if (isInvincible && !isUsingUltimate && _pendingUltimate == null) {
       invincibilityTimer += dt;
       if (invincibilityTimer >= invincibilityDuration) {
         isInvincible = false;
@@ -518,7 +531,8 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
     }
     
     // Update damage invincibility timer
-    if (isDamageInvincible) {
+    // Skip timer check if using ultimate or pending ultimate (ultimate manages its own invulnerability)
+    if (isDamageInvincible && !isUsingUltimate && _pendingUltimate == null) {
       damageInvincibilityTimer += dt;
       if (damageInvincibilityTimer >= damageInvincibilityDuration) {
         isDamageInvincible = false;
@@ -529,22 +543,29 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
     // Update temporary effects
     _updateTemporaryEffects(dt);
     
-    if (isUsingAbility) {
+    // Handle ultimate ability (takes priority over everything)
+    if (isUsingUltimate && _currentUltimate != null) {
+      _currentUltimate!.update(dt);
+    } else if (isUsingAbility) {
       _updateAbility(dt);
     } else {
       _updateMovement(dt);
     }
     
-    // Auto-shoot at enemies
-    _tryAutoShoot();
+    // Auto-shoot at enemies (disabled during ultimate)
+    if (!isUsingUltimate) {
+      _tryAutoShoot();
+    }
     
     // Regenerate energy
     if (energy < maxEnergy) {
       energy = (energy + 50 * dt).clamp(0, maxEnergy);
     }
     
-    // Keep hero within arena bounds
-    _constrainToArena();
+    // Keep hero within arena bounds (only if not using ultimate - ultimate handles its own bouncing)
+    if (!isUsingUltimate) {
+      _constrainToArena();
+    }
     
     // Update ability cooldown in HUD
     _updateAbilityCooldownDisplay();
@@ -1155,6 +1176,12 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
       return true;
     }
     
+    // Handle ultimate ability with 'L' key
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyL) {
+      castUltimate();
+      return true;
+    }
+    
     return false;
   }
   
@@ -1509,11 +1536,102 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
     _passiveEffectStacks.clear();
     destroyAllDrones();
     destroyClone();
+    ultimateCharge = 0;
+    if (_currentUltimate != null) {
+      _currentUltimate!.deactivate();
+      _currentUltimate = null;
+    }
+    _pendingUltimate = null;
+  }
+  
+  /// Factory method to create the appropriate ultimate ability for this hero
+  UltimateAbility? _createUltimate() {
+    switch (heroId) {
+      case 'circle':
+        return EngulfRampage(this);
+      // Add other heroes' ultimates here as they're implemented
+      // case 'triangle':
+      //   return ImmunoglobulinBarrage(this);
+      // case 'square':
+      //   return CytokineCataclysm(this);
+      // etc.
+      default:
+        return null;
+    }
+  }
+  
+  void castUltimate() {
+    print('[ULTIMATE] Step 1: castUltimate() called');
+    print('[ULTIMATE] Current charge: $ultimateCharge / $maxUltimateCharge');
+    
+    if (ultimateCharge >= maxUltimateCharge) {
+      print('[ULTIMATE] Step 2: Charge is full, proceeding with ultimate cast');
+      ultimateCharge = 0;
+      print('[ULTIMATE] Step 3: Charge reset to 0');
+      
+      // Make hero invulnerable immediately when ultimate is cast
+      // This protects the hero during video playback and ultimate execution
+      // Set timer to a large value so it doesn't expire during video + ultimate (6+ seconds total)
+      print('[ULTIMATE] Step 4: Making hero invulnerable for video/ultimate duration');
+      isInvincible = true;
+      invincibilityTimer = 0.0; // Will be managed by ultimate deactivation, not timer
+      isDamageInvincible = true;
+      damageInvincibilityTimer = 0.0; // Will be managed by ultimate deactivation, not timer
+      print('[ULTIMATE] Hero invulnerability set: isInvincible=$isInvincible, isDamageInvincible=$isDamageInvincible');
+      
+      // Create the ultimate (but don't activate it yet)
+      print('[ULTIMATE] Step 5: Creating ultimate ability for hero: $heroId');
+      _pendingUltimate = _createUltimate();
+      
+      if (_pendingUltimate != null) {
+        print('[ULTIMATE] Step 6: Ultimate created: ${_pendingUltimate!.name}');
+        
+        // Check if we should play video first
+        if (heroData.ultimate?.videoPath != null) {
+          print('[ULTIMATE] Step 7: Video path found, will play video first');
+          print('[ULTIMATE] Video path: ${heroData.ultimate!.videoPath}');
+          gameRef.ultimateVideoPath = heroData.ultimate!.videoPath;
+          gameRef.onUltimateVideoComplete = () {
+            print('[ULTIMATE] Step 8: Video completed callback called');
+            print('[ULTIMATE] Step 9: Now activating ultimate after video');
+            _activatePendingUltimate();
+          };
+          print('[ULTIMATE] Step 10: Adding UltimateVideo overlay');
+          gameRef.overlays.add('UltimateVideo');
+          print('[ULTIMATE] ✅ Video overlay added - ultimate will activate after video');
+        } else {
+          print('[ULTIMATE] Step 7: No video path, activating ultimate immediately');
+          _activatePendingUltimate();
+        }
+      } else {
+        print('[ULTIMATE] ❌ Ultimate not implemented for hero: $heroId');
+      }
+    } else {
+      print('[ULTIMATE] ❌ Charge not full, cannot cast ultimate');
+    }
+  }
+  
+  void _activatePendingUltimate() {
+    if (_pendingUltimate == null) {
+      print('[ULTIMATE] ❌ No pending ultimate to activate');
+      return;
+    }
+    
+    print('[ULTIMATE] Step 10: Activating pending ultimate: ${_pendingUltimate!.name}');
+    _currentUltimate = _pendingUltimate;
+    _pendingUltimate = null;
+    
+    print('[ULTIMATE] Step 11: Calling ultimate.activate()');
+    _currentUltimate!.activate();
+    print('[ULTIMATE] ✅ Ultimate activated and executing!');
   }
   
   // Apply heal per kill effect when an enemy is defeated
   void onEnemyKilled() {
     totalKills++;
+    
+    // Increment ultimate charge (1 charge per kill)
+    ultimateCharge = (ultimateCharge + 1).clamp(0, maxUltimateCharge);
     
     final healAmount = totalHealPerKill;
     if (healAmount > 0) {
