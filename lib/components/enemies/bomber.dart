@@ -20,6 +20,10 @@ class Bomber extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 50.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Bombing behavior - now using config
   double get explosionRadius => EnemyConfigManager.instance.getEnemyProperty('bomber', 'explosion_radius', 100.0);
   double get explosionDamage => EnemyConfigManager.instance.getEnemyProperty('bomber', 'explosion_damage', 30.0);
@@ -44,7 +48,7 @@ class Bomber extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   Bomber({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 16.0 * DisplayConfig.instance.scaleFactor, // Larger than basic enemies
+    radius: 32.0 * DisplayConfig.instance.scaleFactor, // Larger than basic enemies
     paint: Paint()..color = const Color(0xFFFF5722), // Orange-red color
     anchor: Anchor.center,
   );
@@ -54,20 +58,35 @@ class Bomber extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
-  }
-  
-  void _initializeHealth() {
-    // Get base health from enemy config
-    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('bomber', 100.0);
-    // Apply wave-based scaling
-    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
-    health = scaledHealth;
-    maxHealth = scaledHealth;
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('bomber');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for bomber: $e');
+        hasSprite = false;
+      }
+    }
   }
   
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
     
     // Draw pulsing effect when fuse is active
     if (fuseActive) {
@@ -90,6 +109,15 @@ class Bomber extends CircleComponent with HasGameRef<CircleRougeGame> {
     }
   }
   
+  void _initializeHealth() {
+    // Get base health from enemy config
+    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('bomber', 100.0);
+    // Apply wave-based scaling
+    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
+    health = scaledHealth;
+    maxHealth = scaledHealth;
+  }
+  
   @override
   void update(double dt) {
     super.update(dt);
@@ -103,7 +131,7 @@ class Bomber extends CircleComponent with HasGameRef<CircleRougeGame> {
     
     // Handle stun
     if (isStunned) {
-      stunTimer -= dt;
+      stunTimer -= dt; 
       if (stunTimer <= 0) {
         isStunned = false;
       }

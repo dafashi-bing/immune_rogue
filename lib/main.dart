@@ -8,6 +8,7 @@ import 'overlays/hero_selection_overlay.dart';
 import 'overlays/pause_menu_overlay.dart';
 import 'overlays/game_over_overlay.dart';
 import 'overlays/ultimate_video_overlay.dart';
+import 'overlays/biome_transition_overlay.dart';
 
 void main() {
   runApp(const CircleRougeApp());
@@ -91,6 +92,12 @@ class CircleRougeApp extends StatelessWidget {
                             game: game,
                             videoPath: game.ultimateVideoPath ?? '',
                             onComplete: game.onUltimateVideoComplete,
+                          ),
+                          'BiomeTransition': (context, game) => BiomeTransitionOverlay(
+                            biomeName: game.currentBiomeName,
+                            onComplete: () {
+                              // Overlay will be removed by the game after animation
+                            },
                           ),
                         },
                       ),

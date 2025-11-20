@@ -3,7 +3,6 @@ import 'package:flutter/material.dart' hide Hero;
 
 import '../../game/circle_rouge_game.dart';
 import '../../config/display_config.dart';
-import '../hero.dart';
 import 'enemy_chaser.dart';
 import 'enemy_shooter.dart';
 
@@ -25,7 +24,7 @@ class PiercingProjectile extends RectangleComponent with HasGameRef<CircleRougeG
     this.isEnemyProjectile = false,
   }) : super(
     position: startPosition,
-    size: Vector2(12.0 * DisplayConfig.instance.scaleFactor, 4.0 * DisplayConfig.instance.scaleFactor),
+    size: Vector2(24.0 * DisplayConfig.instance.scaleFactor, 8.0 * DisplayConfig.instance.scaleFactor),
     paint: Paint()..color = isEnemyProjectile 
         ? const Color(0xFFFF8800) // Orange for enemy piercing projectiles
         : const Color(0xFF00FFFF), // Cyan for hero piercing projectiles
@@ -48,9 +47,9 @@ class PiercingProjectile extends RectangleComponent with HasGameRef<CircleRougeG
     // Check collision with enemies
     final enemiesCopy = List<Component>.from(gameRef.currentEnemies);
     for (final enemy in enemiesCopy) {
-      if (enemy is PositionComponent && enemy is CircleComponent && !hitEnemies.contains(enemy)) {
+      if (enemy is CircleComponent && !hitEnemies.contains(enemy)) {
         final distanceToEnemy = position.distanceTo(enemy.position);
-        final enemyRadius = (enemy as CircleComponent).radius;
+        final enemyRadius = enemy.radius;
         if (distanceToEnemy < size.x + enemyRadius) {
           // Hit enemy
           hitEnemies.add(enemy);

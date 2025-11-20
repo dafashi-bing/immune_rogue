@@ -46,6 +46,10 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
   late HeroData heroData;
   final String heroId;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Hero visual properties
   late double heroRadius;
   late Paint heroPaint;
@@ -142,8 +146,8 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
   DisplayConfigChangeCallback? _displayConfigListener;
   
   // Base values for responsive scaling
-  static const double baseHeroRadius = 15.0;
-  static const double baseHeroSize = 30.0;
+  static const double baseHeroRadius = 22.5;
+  static const double baseHeroSize = 45.0;
 
   Hero({required Vector2 position, required this.heroId}) : super(
     position: position,
@@ -154,6 +158,31 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
     heroPaint = Paint()..color = const Color(0xFF4CAF50);
     _initializeHero(heroId);
     _setupDynamicScaling();
+  }
+  
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+    
+    // Try to load sprite image
+    final imagePath = HeroConfig.instance.getHeroImagePath(heroId);
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(heroRadius * 3); // 1.5x bigger (radius * 2 * 1.5)
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          position: Vector2(size.x / 2, size.y / 2), // Center of the hero's bounding box
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load hero image for $heroId: $e');
+        hasSprite = false;
+      }
+    }
   }
   
   /// Set up dynamic scaling listener
@@ -359,27 +388,31 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
       }
     }
     
-    // Draw main hero shape
-    switch (heroData.shape) {
-      case 'circle':
-        canvas.drawCircle(center, heroRadius, heroPaint);
-        break;
-      case 'triangle':
-        _drawTriangle(canvas, shapeSize, heroPaint, 0);
-        break;
-      case 'square':
-        _drawSquare(canvas, center, heroPaint, 0);
-        break;
-      case 'pentagon':
-        _drawPentagon(canvas, shapeSize, heroPaint, 0);
-        break;
-      case 'hexagon':
-        _drawHexagon(canvas, shapeSize, heroPaint, 0);
-        break;
-      case 'heptagon':
-        _drawHeptagon(canvas, shapeSize, heroPaint, 0);
-        break;
+    // Draw main hero (sprite or shape)
+    if (!hasSprite || spriteComponent == null) {
+      // Fallback to shape rendering
+      switch (heroData.shape) {
+        case 'circle':
+          canvas.drawCircle(center, heroRadius, heroPaint);
+          break;
+        case 'triangle':
+          _drawTriangle(canvas, shapeSize, heroPaint, 0);
+          break;
+        case 'square':
+          _drawSquare(canvas, center, heroPaint, 0);
+          break;
+        case 'pentagon':
+          _drawPentagon(canvas, shapeSize, heroPaint, 0);
+          break;
+        case 'hexagon':
+          _drawHexagon(canvas, shapeSize, heroPaint, 0);
+          break;
+        case 'heptagon':
+          _drawHeptagon(canvas, shapeSize, heroPaint, 0);
+          break;
+      }
     }
+    // Sprite component will render itself if present
     
     // Draw shield outline if shield effect is active
     if (hasTemporaryEffect('shield') && shield > 0) {
@@ -715,7 +748,7 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
       if (enemy is PositionComponent) {
         final distanceToEnemy = position.distanceTo(enemy.position);
         // Use different radius checks for different enemy types
-        double enemyRadius = 15.0 * DisplayConfig.instance.scaleFactor; // Default radius
+        double enemyRadius = 30.0 * DisplayConfig.instance.scaleFactor; // Default radius
         
         if (enemy is EnemyChaser) {
           enemyRadius = enemy.radius;
@@ -1693,7 +1726,7 @@ class Hero extends PositionComponent with HasGameRef<CircleRougeGame>, KeyboardH
   }
   
   void updateHeroSize() {
-    heroRadius = 15.0 * DisplayConfig.instance.scaleFactor * totalCharacterSize;
+    heroRadius = 22.5 * DisplayConfig.instance.scaleFactor * totalCharacterSize;
     // Update component size as well
     size = Vector2.all(heroRadius * 2);
   }

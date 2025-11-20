@@ -42,7 +42,7 @@ class TriangleProjectile extends PositionComponent with HasGameRef<CircleRougeGa
     anchor: Anchor.center,
   ) {
     // Use projectileSize from config if provided, otherwise use default calculation
-    triangleSize = (projectileSize ?? 10.0) * DisplayConfig.instance.scaleFactor * rangeMultiplier;
+    triangleSize = (projectileSize ?? 20.0) * DisplayConfig.instance.scaleFactor * rangeMultiplier;
     size = Vector2.all(triangleSize * 2);
     
     // Different colors for different projectile types - make hero triangle bright

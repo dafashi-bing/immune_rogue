@@ -125,4 +125,14 @@ class EnemyConfigManager {
   double getEnemyItemDropChance(String enemyType, double defaultValue) {
     return _enemyConfigs[enemyType]?.getProperty('item_drop_chance', defaultValue) ?? defaultValue;
   }
+  
+  String? getEnemyImagePath(String enemyType) {
+    final config = _enemyConfigs[enemyType];
+    if (config == null) return null;
+    final imagePath = config.properties['image_path'];
+    if (imagePath is String) {
+      return imagePath;
+    }
+    return null;
+  }
 }

@@ -17,6 +17,10 @@ class EnemyChaser extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 30.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Stun system
   bool isStunned = false;
   double stunTimer = 0.0;
@@ -30,7 +34,7 @@ class EnemyChaser extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   EnemyChaser({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 12.0 * DisplayConfig.instance.scaleFactor,
+    radius: 24.0 * DisplayConfig.instance.scaleFactor,
     paint: Paint()..color = const Color(0xFFFF5722),
     anchor: Anchor.center,
   );
@@ -40,6 +44,35 @@ class EnemyChaser extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('chaser');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for chaser: $e');
+        hasSprite = false;
+      }
+    }
+  }
+  
+  @override
+  void render(Canvas canvas) {
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
   }
   
   void _initializeHealth() {

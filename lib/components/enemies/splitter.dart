@@ -19,6 +19,10 @@ class Splitter extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 140.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Splitter behavior
   final int generation; // 0 = original, 1 = first split, 2 = second split
   int get maxGenerations => EnemyConfigManager.instance.getEnemyIntProperty('splitter', 'max_generations', 2);
@@ -64,10 +68,40 @@ class Splitter extends CircleComponent with HasGameRef<CircleRougeGame> {
     }
   }
   
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+    
+    // Try to load sprite image (only for generation 0, splits use fallback)
+    if (generation == 0) {
+      final imagePath = EnemyConfigManager.instance.getEnemyImagePath('splitter');
+      if (imagePath != null) {
+        try {
+          final sprite = await Sprite.load(imagePath);
+          final spriteSize = Vector2.all(radius * 2);
+          spriteComponent = SpriteComponent(
+            sprite: sprite,
+            size: spriteSize,
+            anchor: Anchor.center,
+          );
+          add(spriteComponent!);
+          hasSprite = true;
+        } catch (e) {
+          print('Could not load enemy image for splitter: $e');
+          hasSprite = false;
+        }
+      }
+    }
+  }
   
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
     
     // Draw pulsing core effect
     final center = Offset(size.x / 2, size.y / 2);
@@ -85,9 +119,9 @@ class Splitter extends CircleComponent with HasGameRef<CircleRougeGame> {
       final ringPaint = Paint()
         ..color = paint.color.withOpacity(0.3)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
+        ..strokeWidth = 2.0;
       
-      canvas.drawCircle(center, radius + (i * 3.0), ringPaint);
+      canvas.drawCircle(center, radius + (i * 6.0), ringPaint);
     }
   }
   

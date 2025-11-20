@@ -34,6 +34,10 @@ class EnemyShooter extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 25.0;
   double lastShotTime = 0.0;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // AI behavior variables
   double lastDirectionChange = 0.0;
   Vector2 currentDirection = Vector2.zero();
@@ -51,7 +55,7 @@ class EnemyShooter extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   EnemyShooter({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 12.0 * DisplayConfig.instance.scaleFactor,
+    radius: 24.0 * DisplayConfig.instance.scaleFactor,
     paint: Paint()..color = const Color(0xFF9C27B0),
     anchor: Anchor.center,
   );
@@ -61,6 +65,35 @@ class EnemyShooter extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('shooter');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for shooter: $e');
+        hasSprite = false;
+      }
+    }
+  }
+  
+  @override
+  void render(Canvas canvas) {
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
   }
   
   void _initializeHealth() {

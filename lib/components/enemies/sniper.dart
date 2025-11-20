@@ -20,6 +20,10 @@ class Sniper extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 125.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Sniper behavior - now configurable
   double get attackRange => EnemyConfigManager.instance.getEnemyProperty('sniper', 'attack_range', 400.0);
   double get chargeTime => EnemyConfigManager.instance.getEnemyProperty('sniper', 'charge_time', 2.0);
@@ -50,7 +54,7 @@ class Sniper extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   Sniper({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 14.0 * DisplayConfig.instance.scaleFactor,
+    radius: 28.0 * DisplayConfig.instance.scaleFactor,
     paint: Paint()..color = const Color(0xFF4CAF50), // Green color
     anchor: Anchor.center,
   );
@@ -60,20 +64,35 @@ class Sniper extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
-  }
-  
-  void _initializeHealth() {
-    // Get base health from enemy config
-    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('sniper', 125.0);
-    // Apply wave-based scaling
-    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
-    health = scaledHealth;
-    maxHealth = scaledHealth;
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('sniper');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for sniper: $e');
+        hasSprite = false;
+      }
+    }
   }
   
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
     
     // Draw charging laser sight
     if ((isAiming || isCharging) && laserAlpha > 0) {
@@ -98,6 +117,15 @@ class Sniper extends CircleComponent with HasGameRef<CircleRougeGame> {
       
       canvas.drawCircle(end, 10.0, targetPaint);
     }
+  }
+  
+  void _initializeHealth() {
+    // Get base health from enemy config
+    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('sniper', 125.0);
+    // Apply wave-based scaling
+    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
+    health = scaledHealth;
+    maxHealth = scaledHealth;
   }
   
   @override

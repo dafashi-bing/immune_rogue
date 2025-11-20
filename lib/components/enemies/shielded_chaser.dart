@@ -15,6 +15,10 @@ class ShieldedChaser extends PositionComponent with HasGameRef<CircleRougeGame> 
   late Paint shieldPaint;
   late double radius;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Movement speed configuration
   static const double baseSpeed = 60.0; // Default fallback speed
   double get speed {
@@ -49,10 +53,10 @@ class ShieldedChaser extends PositionComponent with HasGameRef<CircleRougeGame> 
   
   ShieldedChaser({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    size: Vector2.all(30.0 * DisplayConfig.instance.scaleFactor),
+    size: Vector2.all(60.0 * DisplayConfig.instance.scaleFactor),
     anchor: Anchor.center,
   ) {
-    radius = 15.0 * DisplayConfig.instance.scaleFactor;
+    radius = 30.0 * DisplayConfig.instance.scaleFactor;
     bodyPaint = Paint()..color = const Color(0xFF795548); // Brown color for armored look
     
     // Shield paint with transparency based on shield health
@@ -64,6 +68,25 @@ class ShieldedChaser extends PositionComponent with HasGameRef<CircleRougeGame> 
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('shielded_chaser');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for shielded_chaser: $e');
+        hasSprite = false;
+      }
+    }
   }
   
   void _initializeHealth() {
@@ -97,10 +120,13 @@ class ShieldedChaser extends PositionComponent with HasGameRef<CircleRougeGame> 
     
     final center = Offset(size.x / 2, size.y / 2);
     
-    // Draw main enemy body (gray orb)
-    canvas.drawCircle(center, radius, bodyPaint);
+    // Draw main enemy body (sprite or circle)
+    if (!hasSprite || spriteComponent == null) {
+      canvas.drawCircle(center, radius, bodyPaint);
+    }
+    // Sprite component will render itself if present
     
-    // Draw shield overlay if active
+    // Draw shield overlay if active (always on top)
     if (hasShield) {
       _drawHexagonalShield(canvas, center);
     }
@@ -108,7 +134,7 @@ class ShieldedChaser extends PositionComponent with HasGameRef<CircleRougeGame> 
   
   void _drawHexagonalShield(Canvas canvas, Offset center) {
     final path = Path();
-    final shieldRadius = radius + 8.0; // Shield is larger than the body
+    final shieldRadius = radius + 16.0; // Shield is larger than the body
     
     // Create hexagonal shield shape
     for (int i = 0; i < 6; i++) {

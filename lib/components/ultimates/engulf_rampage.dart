@@ -160,7 +160,7 @@ class EngulfRampage extends UltimateAbility {
         final distanceToEnemy = hero.position.distanceTo(enemy.position);
         
         // Get enemy radius
-        double enemyRadius = 15.0 * DisplayConfig.instance.scaleFactor; // Default radius
+        double enemyRadius = 30.0 * DisplayConfig.instance.scaleFactor; // Default radius
         
         if (enemy is EnemyChaser) {
           enemyRadius = enemy.radius;

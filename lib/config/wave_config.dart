@@ -192,6 +192,73 @@ class InfiniteSpawns {
   }
 }
 
+class BackgroundConfig {
+  final String description;
+  final Map<String, String> mappings; // wave range -> background path
+  final List<String> lateGameBackgrounds;
+  final Map<String, String> biomeNames; // background path -> biome name
+  
+  BackgroundConfig({
+    required this.description,
+    required this.mappings,
+    required this.lateGameBackgrounds,
+    required this.biomeNames,
+  });
+  
+  factory BackgroundConfig.fromJson(Map<String, dynamic> json) {
+    final mappingsData = json['mappings'] as Map<String, dynamic>? ?? {};
+    final lateGameData = json['late_game_backgrounds'] as List? ?? [];
+    final biomeNamesData = json['biome_names'] as Map<String, dynamic>? ?? {};
+    
+    return BackgroundConfig(
+      description: json['description'] ?? '',
+      mappings: mappingsData.map((key, value) => MapEntry(key.toString(), value.toString())),
+      lateGameBackgrounds: lateGameData.map((item) => item.toString()).toList(),
+      biomeNames: biomeNamesData.map((key, value) => MapEntry(key.toString(), value.toString())),
+    );
+  }
+  
+  String getBackgroundForWave(int wave) {
+    // Check if wave matches any range in mappings
+    for (final entry in mappings.entries) {
+      final range = entry.key;
+      final backgroundPath = entry.value;
+      
+      if (range.contains('-')) {
+        // Parse range like "1-2" or "3-4"
+        final parts = range.split('-');
+        if (parts.length == 2) {
+          final start = int.tryParse(parts[0].trim());
+          final end = int.tryParse(parts[1].trim());
+          if (start != null && end != null && wave >= start && wave <= end) {
+            return backgroundPath;
+          }
+        }
+      } else {
+        // Parse single wave like "5"
+        final waveNumber = int.tryParse(range.trim());
+        if (waveNumber != null && wave == waveNumber) {
+          return backgroundPath;
+        }
+      }
+    }
+    
+    // For waves beyond the mapped ranges, use late game backgrounds
+    if (lateGameBackgrounds.isNotEmpty) {
+      // Rotate every 5 waves: waves 16-20 same, 21-25 same, etc.
+      final rotationIndex = ((wave - 16) ~/ 5) % lateGameBackgrounds.length;
+      return lateGameBackgrounds[rotationIndex.clamp(0, lateGameBackgrounds.length - 1)];
+    }
+    
+    // Fallback to first mapping if available
+    return mappings.values.firstOrNull ?? 'backgrounds/background_skin.png';
+  }
+  
+  String getBiomeName(String backgroundPath) {
+    return biomeNames[backgroundPath] ?? 'Unknown Biome';
+  }
+}
+
 class WaveConfig {
   static WaveConfig? _instance;
   static WaveConfig get instance => _instance ??= WaveConfig._();
@@ -221,6 +288,7 @@ class WaveConfig {
   EnemyConfig? _enemyConfig;
   EnemyScaling? _enemyScaling;
   InfiniteSpawns? _infiniteSpawns;
+  BackgroundConfig? _backgroundConfig;
   List<WaveData> _waves = [];
   Map<String, EnemyReward> _enemyRewards = {};
   bool _loaded = false;
@@ -230,6 +298,7 @@ class WaveConfig {
   EnemyConfig? get enemyConfig => _enemyConfig;
   EnemyScaling? get enemyScaling => _enemyScaling;
   InfiniteSpawns? get infiniteSpawns => _infiniteSpawns;
+  BackgroundConfig? get backgroundConfig => _backgroundConfig;
   List<WaveData> get waves => _waves;
   Map<String, EnemyReward> get enemyRewards => _enemyRewards;
   
@@ -258,6 +327,11 @@ class WaveConfig {
       // Load infinite mode spawn configuration if available
       if (yamlData.containsKey('infinite_mode_spawns')) {
         _infiniteSpawns = InfiniteSpawns.fromJson(_convertYamlMap(yamlData['infinite_mode_spawns'] as Map));
+      }
+      
+      // Load background configuration if available
+      if (yamlData.containsKey('wave_backgrounds')) {
+        _backgroundConfig = BackgroundConfig.fromJson(_convertYamlMap(yamlData['wave_backgrounds'] as Map));
       }
       
       _waves = (yamlData['waves'] as List)
@@ -343,5 +417,14 @@ class WaveConfig {
     // Wave 1: no scaling, Wave 2: +30%, Wave 3: +60%, etc.
     final scalingFactor = 1.0 + (_enemyScaling!.damageMultiplier * (currentWave - 1));
     return baseDamage * scalingFactor;
+  }
+  
+  // Get background path for a specific wave
+  String getBackgroundForWave(int wave) {
+    if (_backgroundConfig != null) {
+      return _backgroundConfig!.getBackgroundForWave(wave);
+    }
+    // Fallback to default background
+    return 'backgrounds/background_skin.png';
   }
 } 

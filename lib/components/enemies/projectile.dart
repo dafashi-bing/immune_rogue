@@ -45,7 +45,7 @@ class Projectile extends CircleComponent with HasGameRef<CircleRougeGame> {
     double? scaledRadius,
   }) : super(
     position: startPosition,
-    radius: scaledRadius ?? (4.0 * DisplayConfig.instance.scaleFactor),
+    radius: scaledRadius ?? (8.0 * DisplayConfig.instance.scaleFactor),
     anchor: Anchor.center,
   ) {
     // Different colors for different projectile types

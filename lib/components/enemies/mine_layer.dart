@@ -20,6 +20,10 @@ class MineLayer extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 150.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Mine laying behavior - now using config
   double get mineLayInterval => EnemyConfigManager.instance.getEnemyProperty('mine_layer', 'mine_lay_interval', 3.0);
   double get minDistanceFromMines => EnemyConfigManager.instance.getEnemyProperty('mine_layer', 'min_distance_from_mines', 80.0);
@@ -39,7 +43,7 @@ class MineLayer extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   MineLayer({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 15.0 * DisplayConfig.instance.scaleFactor,
+    radius: 30.0 * DisplayConfig.instance.scaleFactor,
     paint: Paint()..color = const Color(0xFF607D8B), // Blue-grey color
     anchor: Anchor.center,
   );
@@ -49,20 +53,35 @@ class MineLayer extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
-  }
-  
-  void _initializeHealth() {
-    // Get base health from enemy config
-    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('mine_layer', 150.0);
-    // Apply wave-based scaling
-    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
-    health = scaledHealth;
-    maxHealth = scaledHealth;
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('mine_layer');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for mine_layer: $e');
+        hasSprite = false;
+      }
+    }
   }
   
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
     
     // Draw mine layer indicator (small dots around the enemy)
     final center = Offset(size.x / 2, size.y / 2);
@@ -72,14 +91,23 @@ class MineLayer extends CircleComponent with HasGameRef<CircleRougeGame> {
     
     for (int i = 0; i < 6; i++) {
       final angle = (i * 60.0) * (pi / 180.0);
-      final dotRadius = 2.0;
-      final distance = radius + 8.0;
+      final dotRadius = 4.0;
+      final distance = radius + 16.0;
       
       final dotX = center.dx + cos(angle) * distance;
       final dotY = center.dy + sin(angle) * distance;
       
       canvas.drawCircle(Offset(dotX, dotY), dotRadius, dotPaint);
     }
+  }
+  
+  void _initializeHealth() {
+    // Get base health from enemy config
+    final baseHealth = EnemyConfigManager.instance.getEnemyHealth('mine_layer', 150.0);
+    // Apply wave-based scaling
+    final scaledHealth = WaveConfig.instance.getScaledHealth(baseHealth, gameRef.currentWave);
+    health = scaledHealth;
+    maxHealth = scaledHealth;
   }
   
   @override
@@ -247,7 +275,7 @@ class Mine extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   Mine({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 8.0 * DisplayConfig.instance.scaleFactor,
+    radius: 16.0 * DisplayConfig.instance.scaleFactor,
     paint: Paint()..color = const Color(0xFF795548), // Brown color
     anchor: Anchor.center,
   );
@@ -264,10 +292,10 @@ class Mine extends CircleComponent with HasGameRef<CircleRougeGame> {
       final armPaint = Paint()
         ..color = Colors.orange.withOpacity(0.5)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
+        ..strokeWidth = 4.0;
       
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius + 5.0),
+        Rect.fromCircle(center: center, radius: radius + 10.0),
         -pi / 2,
         2 * pi * armProgress,
         false,
@@ -280,7 +308,7 @@ class Mine extends CircleComponent with HasGameRef<CircleRougeGame> {
         ..color = Colors.red.withOpacity(0.3 + 0.3 * pulseIntensity)
         ..style = PaintingStyle.fill;
       
-      canvas.drawCircle(center, radius + 3.0, pulsePaint);
+      canvas.drawCircle(center, radius + 6.0, pulsePaint);
       
       // Draw danger zone indicator (faint)
       final dangerPaint = Paint()
@@ -358,7 +386,7 @@ class Mine extends CircleComponent with HasGameRef<CircleRougeGame> {
       // Create small visual fragments (could be simple components)
       final fragment = CircleComponent(
         position: position.clone(),
-        radius: 3.0,
+        radius: 6.0 * DisplayConfig.instance.scaleFactor,
         paint: Paint()..color = Colors.orange,
       );
       

@@ -5,7 +5,9 @@ chaser:
   coins: 10
   movement_speed: 60.0
   item_drop_chance: 0
+  fancy_name: Influenza Virus Particle
   description: Fast melee enemy that charges at the player
+  image_path: enemies/chaser/chaser_1x1.png
 
 shooter:
   health: 25.0
@@ -18,7 +20,9 @@ shooter:
   coins: 20
   movement_speed: 30.0
   item_drop_chance: 0.1
+  fancy_name: Pseudomonas Bacterium
   description: Ranged enemy that maintains distance while shooting
+  image_path: enemies/shooter/shooter_1x1.png
 
 shielded_chaser:
   health: 45.0
@@ -29,7 +33,9 @@ shielded_chaser:
   coins: 30
   movement_speed: 60.0
   item_drop_chance: 0
+  fancy_name: Biofilm-Encased Bacterium
   description: Armored melee enemy with shield protection
+  image_path: enemies/shielded_chaser/shielded_chaser_1x1.png
 
 swarmer:
   health: 25.0
@@ -41,7 +47,9 @@ swarmer:
   coins: 1
   movement_speed: 120.0
   item_drop_chance: 0
+  fancy_name: E. coli Swarm
   description: Fast, agile enemy that swarms together
+  image_path: enemies/swarmer/swarmer_1x1.png
 
 bomber:
   health: 100.0
@@ -56,6 +64,7 @@ bomber:
   coins: 5
   movement_speed: 40.0
   item_drop_chance: 0
+  fancy_name: Spore-Forming Bacterium
   description: Slow but explosive enemy that detonates when close
 
 sniper:
@@ -71,7 +80,9 @@ sniper:
   coins: 5
   movement_speed: 30.0
   item_drop_chance: 0.1
+  fancy_name: Bacteriophage Sniper
   description: Long-range enemy with charging laser attacks
+  image_path: enemies/sniper/sniper_1x1.png
 
 splitter:
   health: 140.0
@@ -81,12 +92,14 @@ splitter:
   max_generations: 2
   generation_health: [40.0, 25.0, 15.0]
   generation_speed_multiplier: [1.0, 0.8, 0.6]
-  generation_radius: [18.0, 14.0, 10.0]
+  generation_radius: [36.0, 28.0, 20.0]
   split_distance: 30.0
   coins: 5
   movement_speed: 60.0
   item_drop_chance: 0
+  fancy_name: Segmented Virus
   description: Enemy that splits into smaller versions when destroyed
+  # image_path: enemies/splitter/splitter_1x1.png
 
 mine_layer:
   health: 150.0
@@ -105,4 +118,6 @@ mine_layer:
   coins: 5
   movement_speed: 45.0
   item_drop_chance: 0.1
+  fancy_name: Spore Mine Layer
   description: Tactical enemy that places explosive mines
+  image_path: enemies/miner/miner_1x1.png

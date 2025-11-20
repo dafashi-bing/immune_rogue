@@ -59,7 +59,7 @@ class ShapeProjectile extends PositionComponent with HasGameRef<CircleRougeGame>
     position: startPosition,
     anchor: Anchor.center,
   ) {
-    projectileSize = 8.0 * DisplayConfig.instance.scaleFactor * sizeScale;
+    projectileSize = 16.0 * DisplayConfig.instance.scaleFactor * sizeScale;
     size = Vector2.all(projectileSize);
     
     // Different colors for different projectile types

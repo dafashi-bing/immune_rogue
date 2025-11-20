@@ -75,3 +75,24 @@ infinite_mode_spawns:
     sniper: 10
     splitter: 12
     mine_layer: 14
+
+wave_backgrounds:
+  description: Maps wave ranges to background images. For waves 16+, randomly rotates through late_game_backgrounds every 5 waves.
+  mappings:
+    1-2: backgrounds/background_skin.png
+    3-4: backgrounds/background_bloodstream.png
+    5: backgrounds/background_lymph.png
+    6-7: backgrounds/background_gut_lumen.png
+    8-9: backgrounds/background_lung.png
+    10-15: backgrounds/background_blood_brain.png
+  late_game_backgrounds:
+    - backgrounds/background_bloodstream.png
+    - backgrounds/background_lung.png
+    - backgrounds/background_lymph.png
+  biome_names:
+    backgrounds/background_skin.png: Skin Barrier
+    backgrounds/background_bloodstream.png: Bloodstream
+    backgrounds/background_lymph.png: Lymph Node
+    backgrounds/background_gut_lumen.png: Gut Lumen
+    backgrounds/background_lung.png: Lung Tissue
+    backgrounds/background_blood_brain.png: Blood-Brain Barrier

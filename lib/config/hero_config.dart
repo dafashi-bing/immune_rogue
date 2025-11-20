@@ -90,6 +90,7 @@ class HeroData {
   final HeroAbility ability;
   final HeroUltimate? ultimate;
   final Color color;
+  final String? imagePath;
   
   HeroData({
     required this.id,
@@ -100,6 +101,7 @@ class HeroData {
     required this.ability,
     this.ultimate,
     required this.color,
+    this.imagePath,
   });
   
   factory HeroData.fromJson(Map<String, dynamic> json) {
@@ -114,6 +116,7 @@ class HeroData {
           ? HeroUltimate.fromJson(HeroData._convertYamlMap(json['ultimate']))
           : null,
       color: Color(_parseColor(json['color'])),
+      imagePath: json['image_path'],
     );
   }
   
@@ -219,6 +222,11 @@ class HeroConfig {
   
   HeroData? getHeroById(String id) {
     return _heroes.where((hero) => hero.id == id).firstOrNull;
+  }
+  
+  String? getHeroImagePath(String heroId) {
+    final hero = getHeroById(heroId);
+    return hero?.imagePath;
   }
   
   HeroData get defaultHero => _heroes.isNotEmpty ? _heroes.first : _heroes[0];

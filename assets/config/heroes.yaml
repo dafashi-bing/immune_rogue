@@ -4,6 +4,7 @@ heroes:
     shape: circle
     move_speed: 320
     health: 100
+    image_path: heroes/circle/circle_1x1.png
     ability:
       name: Rolling Surge
       description: Unleash a high-speed roll that damages all enemies in your path.

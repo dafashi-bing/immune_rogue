@@ -17,6 +17,10 @@ class Swarmer extends CircleComponent with HasGameRef<CircleRougeGame> {
   double maxHealth = 25.0;
   bool isDead = false;
   
+  // Sprite component for image rendering
+  SpriteComponent? spriteComponent;
+  bool hasSprite = false;
+  
   // Swarming behavior - now using config
   late Vector2 swarmTarget;
   double get swarmRadius => EnemyConfigManager.instance.getEnemyProperty('swarmer', 'swarm_radius', 80.0);
@@ -35,7 +39,7 @@ class Swarmer extends CircleComponent with HasGameRef<CircleRougeGame> {
   
   Swarmer({Vector2? position}) : super(
     position: position ?? Vector2.zero(),
-    radius: 8.0 * DisplayConfig.instance.scaleFactor, // Smaller than other enemies
+    radius: 16.0 * DisplayConfig.instance.scaleFactor, // Smaller than other enemies
     paint: Paint()..color = const Color(0xFFFFEB3B), // Yellow color
     anchor: Anchor.center,
   ) {
@@ -47,6 +51,35 @@ class Swarmer extends CircleComponent with HasGameRef<CircleRougeGame> {
     super.onLoad();
     // Initialize health from config with wave scaling
     _initializeHealth();
+    
+    // Try to load sprite image
+    final imagePath = EnemyConfigManager.instance.getEnemyImagePath('swarmer');
+    if (imagePath != null) {
+      try {
+        final sprite = await Sprite.load(imagePath);
+        final spriteSize = Vector2.all(radius * 2);
+        spriteComponent = SpriteComponent(
+          sprite: sprite,
+          size: spriteSize,
+          anchor: Anchor.center,
+        );
+        add(spriteComponent!);
+        hasSprite = true;
+      } catch (e) {
+        print('Could not load enemy image for swarmer: $e');
+        hasSprite = false;
+      }
+    }
+  }
+  
+  @override
+  void render(Canvas canvas) {
+    if (hasSprite && spriteComponent != null) {
+      // Don't render circle if we have a sprite
+      // The sprite component will render itself
+    } else {
+      super.render(canvas);
+    }
   }
   
   void _initializeHealth() {

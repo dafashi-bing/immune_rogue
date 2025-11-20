@@ -42,6 +42,9 @@ class CircleRougeGame extends FlameGame
   // WaveTimer removed - now using WaveAnnouncement instead
   late ConsumableDropManager consumableDropManager;
   
+  String? currentBackgroundPath; // Track current background to avoid reloading
+  String currentBiomeName = ''; // Track current biome name for transition overlay
+  
   GameState gameState = GameState.startMenu;
   
   // Game Mode System
@@ -95,37 +98,66 @@ class CircleRougeGame extends FlameGame
     // Load configurations first
     await DisplayConfig.instance.loadConfig();
     
-    // Create arena background with background image
-    try {
-      final backgroundSprite = await Sprite.load('background1.png');
-      backgroundArena = SpriteComponent(
-        sprite: backgroundSprite,
-        size: Vector2(arenaWidth, arenaHeight),
-        position: Vector2(arenaWidth / 2, arenaHeight / 2),
-        anchor: Anchor.center, // Center the background
-      );
-      add(backgroundArena);
-    } catch (e) {
-      print('Could not load background image: $e');
-      // Create a simple colored background as fallback
-      final rect = RectangleComponent(
-        size: Vector2(arenaWidth, arenaHeight),
-        position: Vector2(arenaWidth / 2, arenaHeight / 2),
-        paint: Paint()..color = const Color(0xFF1A1A1A),
-        anchor: Anchor.center, // Center the background
-      );
-      add(rect);
-    }
-    
-    // Set up dynamic background scaling listener
-    DisplayConfig.instance.addListener(_onDisplayConfigChanged);
-    
-    // Load other configurations
+    // Load other configurations first so we can get the initial background
     await ItemConfig.instance.loadConfig();
     await WaveConfig.instance.loadConfig();
     await HeroConfig.instance.loadConfig();
     await GameModeConfig.instance.loadConfig();
     await EnemyConfigManager.instance.loadConfig();
+    
+    // Create arena background with initial background (wave 1)
+    Sprite? backgroundSprite;
+    try {
+      final initialBackgroundPath = WaveConfig.instance.getBackgroundForWave(1);
+      currentBackgroundPath = initialBackgroundPath;
+      backgroundSprite = await Sprite.load(initialBackgroundPath);
+    } catch (e) {
+      print('Could not load configured background: $e, trying fallback...');
+      // Try fallback background
+      try {
+        backgroundSprite = await Sprite.load('background1.png');
+        currentBackgroundPath = 'background1.png';
+      } catch (e2) {
+        print('Could not load fallback background either: $e2');
+        // Last resort: try any background
+        try {
+          backgroundSprite = await Sprite.load('backgrounds/background_skin.png');
+          currentBackgroundPath = 'backgrounds/background_skin.png';
+        } catch (e3) {
+          print('All background loading failed: $e3');
+        }
+      }
+    }
+    
+    if (backgroundSprite != null) {
+      backgroundArena = SpriteComponent(
+        sprite: backgroundSprite,
+        size: Vector2(arenaWidth, arenaHeight),
+        position: Vector2(arenaWidth / 2, arenaHeight / 2),
+        anchor: Anchor.center,
+      );
+      add(backgroundArena);
+    } else {
+      // Create a simple colored background as last resort fallback
+      final rect = RectangleComponent(
+        size: Vector2(arenaWidth, arenaHeight),
+        position: Vector2(arenaWidth / 2, arenaHeight / 2),
+        paint: Paint()..color = const Color(0xFF1A1A1A),
+        anchor: Anchor.center,
+      );
+      add(rect);
+      // Create a dummy sprite component with 1x1 transparent image
+      final dummyImage = await images.load('logo.png'); // Use existing asset as dummy
+      backgroundArena = SpriteComponent(
+        sprite: Sprite(dummyImage),
+        size: Vector2(arenaWidth, arenaHeight),
+        position: Vector2(arenaWidth / 2, arenaHeight / 2),
+        anchor: Anchor.center,
+      );
+    }
+    
+    // Set up dynamic background scaling listener
+    DisplayConfig.instance.addListener(_onDisplayConfigChanged);
     
     // Initialize sound manager and preload sounds
     await SoundManager().preloadSounds();
@@ -399,14 +431,20 @@ class CircleRougeGame extends FlameGame
     overlays.add('StartMenu');
   }
   
-  void startWave(int waveNumber) {
-    gameState = GameState.playing;
+  void startWave(int waveNumber) async {
     currentWave = waveNumber;
     waveCompletionInProgress = false; // Reset flag for new wave
     
-    // Reset wave timer
+    // Reset wave timer FIRST before any transitions
     waveTime = 0.0;
     enemySpawnTimer = 0.0;
+    
+    // Update background based on wave (with transition if biome changes)
+    // This will pause the game during transition
+    await _updateBackgroundForWave(waveNumber);
+    
+    // NOW set game state to playing after transition completes
+    gameState = GameState.playing;
     
     // Set spawn interval from wave config with endless mode scaling
     double baseSpawnInterval;
@@ -1052,6 +1090,44 @@ class CircleRougeGame extends FlameGame
         return '🧨 A Mine exploded beneath you.';
       default:
         return '💀 The shapes have claimed another hero...';
+    }
+  }
+  
+  // Update background based on wave number
+  Future<void> _updateBackgroundForWave(int wave) async {
+    final backgroundPath = WaveConfig.instance.getBackgroundForWave(wave);
+    
+    // Only update if background changed
+    if (backgroundPath == currentBackgroundPath) {
+      return;
+    }
+    
+    // Get biome name for transition
+    final biomeName = WaveConfig.instance.backgroundConfig?.getBiomeName(backgroundPath) ?? 'Unknown Biome';
+    currentBiomeName = biomeName;
+    
+    // Pause game during transition (will be set back to playing by startWave)
+    gameState = GameState.paused;
+    
+    // Show biome transition overlay
+    overlays.add('BiomeTransition');
+    
+    // Wait for transition to complete (2 seconds)
+    await Future.delayed(const Duration(milliseconds: 2000));
+    
+    // Remove transition overlay
+    // Note: gameState will be set to playing by startWave after this returns
+    overlays.remove('BiomeTransition');
+    
+    currentBackgroundPath = backgroundPath;
+    
+    try {
+      final backgroundSprite = await Sprite.load(backgroundPath);
+      backgroundArena.sprite = backgroundSprite;
+      print('Background changed to: $backgroundPath ($biomeName) for wave $wave');
+    } catch (e) {
+      print('Could not load background image: $backgroundPath - $e');
+      // Keep current background on error
     }
   }
 } 

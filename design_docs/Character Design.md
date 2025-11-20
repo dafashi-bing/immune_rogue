@@ -56,7 +56,7 @@ Author: [TO-DO]
 
 ### 1.3 Enemies (Pathogens)
 
-1. **Influenza Virus Particle** (Fast Swarm – 32×32)  
+1. **Influenza Virus Particle** (Chaser – 32×32)  
    - Body: grey sphere with 6 red spikes.  
    - Animation: rotate spikes slowly; 4-frame “roll” movement.  
 
